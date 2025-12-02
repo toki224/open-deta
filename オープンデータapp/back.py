@@ -6,7 +6,7 @@ import mysql.connector
 import os
 from dotenv import load_dotenv
 
-# uvicorn back:app --reload
+# uvicorn起動　uvicorn back:app --reload
 
 load_dotenv()
 
