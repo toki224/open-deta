@@ -1,0 +1,14 @@
+{
+  "name": "station-app",
+  "version": "1.0.0",
+  "description": "駅データ表示アプリケーション",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "dev": "tsc --watch"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
+
