@@ -3,24 +3,53 @@ Flask APIサーバー - stationsデータベースからデータを提供
 """
 
 import json
+import os
 from typing import Dict, Any, List
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from dotenv import load_dotenv
 from database_connection import DatabaseConnection
-import os
+
+# .envファイルから環境変数を読み込む
+# 明示的にパスを指定（api_server.pyと同じディレクトリの.envを読み込む）
+env_path = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(dotenv_path=env_path)
 
 app = Flask(__name__)
 CORS(app)  # CORSを有効化してフロントエンドからのアクセスを許可
 
-# MySQL接続情報
+# MySQL接続情報（環境変数から取得）
+# 注意: パスワードは必ず.envファイルで設定してください
 MYSQL_CONFIG = {
-    "host": "localhost",
-    "port": 3306,
-    "user": "root",
-    "password": "Taisei0611",
-    "database": "station"
+    "host": os.getenv("MYSQL_HOST", "localhost"),
+    "port": int(os.getenv("MYSQL_PORT", "3306")),
+    "user": os.getenv("MYSQL_USER", "root"),
+    "password": os.getenv("MYSQL_PASSWORD", ""),  # デフォルト値は空文字列（.envファイル必須）
+    "database": os.getenv("MYSQL_DATABASE", "station")
 }
+
+# デバッグ: 環境変数の読み込み状況を確認
+print("=== 環境変数の読み込み状況 ===")
+print(f".envファイルのパス: {env_path}")
+print(f".envファイルの存在: {os.path.exists(env_path)}")
+print(f"MYSQL_HOST: {MYSQL_CONFIG['host']}")
+print(f"MYSQL_PORT: {MYSQL_CONFIG['port']}")
+print(f"MYSQL_USER: {MYSQL_CONFIG['user']}")
+print(f"MYSQL_PASSWORD: {'***' if MYSQL_CONFIG['password'] else '(未設定)'}")
+print(f"MYSQL_DATABASE: {MYSQL_CONFIG['database']}")
+print("=" * 40)
+
+# .envファイルが設定されているか確認（開発時の警告）
+if not MYSQL_CONFIG["password"]:
+    print("\n⚠️  警告: MYSQL_PASSWORDが設定されていません。")
+    print(f"   .envファイルを確認してください: {env_path}")
+    print("   .envファイルの例:")
+    print("   MYSQL_HOST=localhost")
+    print("   MYSQL_PORT=3306")
+    print("   MYSQL_USER=root")
+    print("   MYSQL_PASSWORD=your_password_here")
+    print("   MYSQL_DATABASE=station\n")
 
 BODY_METRIC_DEFINITIONS: Dict[str, Dict[str, Any]] = {
     "step_response_status": {"label": "段差への対応", "type": "flag", "required": 1},

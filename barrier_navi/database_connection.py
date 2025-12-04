@@ -2,7 +2,12 @@
 ローカルMySQLデータベースに接続してデータを取得するプログラム
 """
 
+import os
 from typing import List, Dict, Any, Optional
+from dotenv import load_dotenv
+
+# .envファイルから環境変数を読み込む
+load_dotenv()
 
 
 class DatabaseConnection:
@@ -10,7 +15,7 @@ class DatabaseConnection:
     
     def __init__(self, host: str = "localhost", port: int = 3306, 
                  database: str = "mysql", user: str = "root", 
-                 password: str = "Taisei0611", **kwargs):
+                 password: str = "", **kwargs):
         """
         MySQLデータベース接続を初期化
         
@@ -173,13 +178,13 @@ class DatabaseConnection:
 def main():
     """メイン関数 - stationデータベースのstationsテーブルからデータを取得"""
     
-    # MySQL接続情報を設定
+    # MySQL接続情報を設定（環境変数から取得）
     MYSQL_CONFIG = {
-        "host": "localhost",
-        "port": 3306,
-        "user": "root",
-        "password": "Taisei0611",
-        "database": "station"  # stationデータベースに接続
+        "host": os.getenv("MYSQL_HOST", "localhost"),
+        "port": int(os.getenv("MYSQL_PORT", "3306")),
+        "user": os.getenv("MYSQL_USER", "root"),
+        "password": os.getenv("MYSQL_PASSWORD", ""),
+        "database": os.getenv("MYSQL_DATABASE", "station")
     }
     
     # データベースに接続

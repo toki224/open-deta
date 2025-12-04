@@ -11,7 +11,38 @@ MySQLの駅データをもとに、身体障害の方向けにバリアフリー
 
 ## セットアップ
 
-### 1. Pythonパッケージのインストール
+### 1. 環境変数ファイルの設定
+
+`.env`ファイルを作成して、MySQL接続情報を設定してください。
+
+**Windowsの場合:**
+```bash
+# .envファイルを新規作成
+notepad .env
+```
+
+**Mac/Linuxの場合:**
+```bash
+# .envファイルを新規作成
+touch .env
+# または
+nano .env
+```
+
+`.env`ファイルに以下の内容を記述してください：
+```
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=your_password_here
+MYSQL_DATABASE=station
+```
+
+`your_password_here`の部分を実際のMySQLパスワードに置き換えてください。
+
+**重要**: `.env`ファイルには機密情報が含まれるため、Gitにコミットしないでください。`.gitignore`に追加されています。
+
+### 2. Pythonパッケージのインストール
 
 ```bash
 py -m pip install -r requirements.txt
@@ -88,7 +119,10 @@ py -m http.server 8000
 │   └── detail.js         # 詳細ページのJavaScript
 ├── package.json          # Node.js依存関係
 ├── tsconfig.json         # TypeScript設定
-└── requirements.txt     # Python依存関係
+├── requirements.txt      # Python依存関係
+├── .env.example          # 環境変数テンプレート
+├── .env                  # 環境変数ファイル（.gitignoreに含まれる）
+└── .gitignore            # Git除外設定
 ```
 
 ## 開発
@@ -108,7 +142,7 @@ npm run watch
 ## 注意事項
 
 - MySQLサーバーが起動していることを確認してください
-- `api_server.py`内のMySQL接続情報を環境に合わせて設定してください
+- `.env`ファイルにMySQL接続情報を設定してください（`.env.example`を参考にしてください）
 - CORSは開発環境用に有効化されています。本番環境では適切に設定してください
 - バリアフリー設備の有無などのフラグ列は、データベース上で「1=○（設置あり）」「2=×（設置なし）」「3=-（該当なし）」として保存されています。本アプリでは値が1のときのみ設備があると判定して表示します
 - 「バリアナビ」構想の詳細仕様は `docs/barianavi_spec.md` に記載しています（身体障害カテゴリの指標・必要値など）
