@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>バリアナビ - ホーム</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-shell">
+        <header class="home-header">
+            <h1>バリアナビ</h1>
+            <p>駅のバリアフリー情報を確認できます</p>
+        </header>
+
+        <main class="home-main">
+            <section class="home-panel">
+                <div class="panel-header">
+                    <h2>障害カテゴリを選択</h2>
+                    <p>ご自身の障害に合わせたページを選択してください</p>
+                </div>
+
+                <div class="category-grid">
+                    <a href="index.html" class="category-card category-body">
+                        <div class="category-icon"></div>
+                        <h3>身体障害</h3>
+                        <p>車いす利用者や肢体不自由者の方向けの情報を提供します</p>
+                    </a>
+
+                    <a href="#" class="category-card category-hearing">
+                        <div class="category-icon"></div>
+                        <h3>聴覚障害</h3>
+                        <p>聴覚障害者の方向けの情報を提供します</p>
+                    </a>
+
+                    <a href="#" class="category-card category-visual">
+                        <div class="category-icon"></div>
+                        <h3>視覚障害</h3>
+                        <p>視覚障害者の方向けの情報を提供します</p>
+                    </a>
+                </div>
+            </section>
+        </main>
+
+        <button class="profile-btn" id="profile-btn" aria-label="プロフィール">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        </button>
+    </div>
+
+    <script src="dist/home.js"></script>
+</body>
+</html>
+

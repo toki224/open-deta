@@ -1,0 +1,10 @@
+# MySQL接続用パッケージ
+mysql-connector-python>=8.0.0
+
+# Flask APIサーバー用パッケージ
+Flask>=3.0.0
+flask-cors>=4.0.0
+
+# 環境変数管理
+python-dotenv>=1.0.0
+
