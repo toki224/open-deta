@@ -18,6 +18,7 @@ const BODY_METRICS = [
     { key: 'num_compliant_slopes', label: '移動等円滑化基準に適合している傾斜路の有無', required: 2, type: 'number' },
     { key: 'num_wheelchair_accessible_platforms', label: '車いす使用者の円滑な乗降が可能なプラットホームの有無', required: 6, type: 'number' }
 ];
+
 class StationApp {
     constructor() {
         this.apiBaseUrl = 'http://localhost:5000/api';
@@ -26,6 +27,7 @@ class StationApp {
         this.selectedPrefecture = null;
         this.keyword = '';
         this.lastResultCount = 0;
+        this.totalCount = 0; // ★追加：全件数を保存
         this.selectedFilters = [];
         this.sortOrder = 'none';
         this.init();
@@ -68,6 +70,8 @@ class StationApp {
         const sortSelect = document.getElementById('sort-select');
         const prevButton = document.getElementById('prev-btn');
         const nextButton = document.getElementById('next-btn');
+        const firstButton = document.getElementById('first-btn'); // ★追加
+        const lastButton = document.getElementById('last-btn');   // ★追加
         const filterButton = document.getElementById('apply-filter-btn');
         const resetButton = document.getElementById('reset-filter-btn');
         searchButton === null || searchButton === void 0 ? void 0 : searchButton.addEventListener('click', () => this.applySearch());
@@ -95,10 +99,20 @@ class StationApp {
             }
         });
         nextButton === null || nextButton === void 0 ? void 0 : nextButton.addEventListener('click', () => {
-            if (this.lastResultCount === this.pageSize) {
-                this.currentPage += 1;
-                this.loadStations();
-            }
+            // 次のページへ（簡易チェック）
+            this.currentPage += 1;
+            this.loadStations();
+        });
+        // ★追加: 最初へボタンの処理
+        firstButton === null || firstButton === void 0 ? void 0 : firstButton.addEventListener('click', () => {
+            this.currentPage = 1;
+            this.loadStations();
+        });
+        // ★追加: 最後へボタンの処理
+        lastButton === null || lastButton === void 0 ? void 0 : lastButton.addEventListener('click', () => {
+            const totalPages = Math.ceil(this.totalCount / this.pageSize);
+            this.currentPage = totalPages > 0 ? totalPages : 1;
+            this.loadStations();
         });
         filterButton === null || filterButton === void 0 ? void 0 : filterButton.addEventListener('click', () => {
             this.currentPage = 1;
@@ -205,6 +219,7 @@ class StationApp {
                 sortedData.sort((a, b) => b.score.percentage - a.score.percentage);
             }
             this.lastResultCount = sortedData.length;
+            this.totalCount = response.total_count || 0; // ★追加: 全件数を保存
             this.renderStationCards(sortedData);
             this.updatePagination();
             this.updateActiveFilters();
@@ -346,12 +361,22 @@ class StationApp {
         const pageInfo = document.getElementById('page-info');
         const prevButton = document.getElementById('prev-btn');
         const nextButton = document.getElementById('next-btn');
+        const firstButton = document.getElementById('first-btn'); // ★追加
+        const lastButton = document.getElementById('last-btn');   // ★追加
+        // ★追加: 総ページ数の計算
+        const totalPages = Math.ceil(this.totalCount / this.pageSize);
         if (pageInfo)
-            pageInfo.textContent = `ページ ${this.currentPage}`;
+            pageInfo.textContent = `ページ ${this.currentPage} / ${totalPages || 1}`;
+        const isFirstPage = this.currentPage === 1;
+        const isLastPage = this.currentPage >= totalPages || totalPages === 0;
         if (prevButton)
-            prevButton.disabled = this.currentPage === 1;
+            prevButton.disabled = isFirstPage;
+        if (firstButton)
+            firstButton.disabled = isFirstPage; // ★追加
         if (nextButton)
-            nextButton.disabled = this.lastResultCount < this.pageSize;
+            nextButton.disabled = isLastPage;
+        if (lastButton)
+            lastButton.disabled = isLastPage; // ★追加
     }
     navigateToDetail(stationId) {
         const url = new URL('detail.html', window.location.href);
@@ -369,4 +394,3 @@ class StationApp {
 document.addEventListener('DOMContentLoaded', () => {
     new StationApp();
 });
-

@@ -357,7 +357,7 @@ def search_stations():
 
 @app.route('/api/body/stations', methods=['GET'])
 def get_body_accessible_stations():
-    """身体障害者向けスコア付きの駅一覧"""
+    """身体障害者向けスコア付きの駅一覧（修正版：全件数取得付き）"""
     try:
         keyword = request.args.get('keyword', default='', type=str).strip()
         prefecture = request.args.get('prefecture', default=None, type=str)
@@ -377,35 +377,42 @@ def get_body_accessible_stations():
             except json.JSONDecodeError:
                 filter_list = []
 
-        columns = ", ".join(BODY_QUERY_COLUMNS)
-        query = f"SELECT {columns} FROM stations WHERE 1=1"
+        # --- クエリ構築の共通部分 ---
+        where_clause = "FROM stations WHERE 1=1"
         params: List[Any] = []
 
         if keyword:
-            query += " AND station_name LIKE %s"
+            where_clause += " AND station_name LIKE %s"
             params.append(f"%{keyword}%")
         if prefecture:
-            query += " AND prefecture = %s"
+            where_clause += " AND prefecture = %s"
             params.append(prefecture)
 
-        # 設備の有無でフィルタリング
         for filter_key in filter_list:
             if filter_key in BODY_METRIC_DEFINITIONS:
                 metric_def = BODY_METRIC_DEFINITIONS[filter_key]
                 if metric_def["type"] == "flag":
-                    # flag型: 値が1のもののみ
-                    query += f" AND {filter_key} = %s"
+                    where_clause += f" AND {filter_key} = %s"
                     params.append(1)
                 else:
-                    # number型: 値が0より大きいもののみ
-                    query += f" AND {filter_key} > %s"
+                    where_clause += f" AND {filter_key} > %s"
                     params.append(0)
-
-        query += " ORDER BY station_name LIMIT %s OFFSET %s"
-        params.extend([limit, offset])
+        # ---------------------------
 
         db = DatabaseConnection(**MYSQL_CONFIG)
-        rows = db.execute_query(query, tuple(params))
+
+        # 1. 全件数を取得（ページネーション計算用）
+        count_query = f"SELECT COUNT(*) as total {where_clause}"
+        count_result = db.execute_query(count_query, tuple(params))
+        total_count = count_result[0]['total'] if count_result else 0
+
+        # 2. データ本体を取得
+        columns = ", ".join(BODY_QUERY_COLUMNS)
+        query = f"SELECT {columns} {where_clause} ORDER BY station_name LIMIT %s OFFSET %s"
+        # LIMITとOFFSETをパラメータに追加
+        data_params = params + [limit, offset]
+        rows = db.execute_query(query, tuple(data_params))
+        
         db.close()
 
         data = [build_body_station_response(row, weights, include_details=False) for row in rows]
@@ -413,7 +420,8 @@ def get_body_accessible_stations():
         return jsonify({
             "success": True,
             "data": data,
-            "count": len(data)
+            "count": len(data),       # 取得したデータ数
+            "total_count": total_count # ★追加：全件数
         })
     except Exception as e:
         return jsonify({

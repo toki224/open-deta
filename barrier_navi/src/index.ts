@@ -6,6 +6,7 @@ interface ApiResponse<T> {
   success: boolean;
   data?: T;
   count?: number;
+  total_count?: number; // ★追加：全件数を受け取る
   error?: string;
 }
 
@@ -77,6 +78,7 @@ class StationApp {
   private selectedPrefecture: string | null = null;
   private keyword: string = '';
   private lastResultCount = 0;
+  private totalCount = 0; // ★追加：全件数を保存
   private selectedFilters: string[] = [];
   private sortOrder: 'none' | 'score-asc' | 'score-desc' = 'none';
 
@@ -126,8 +128,13 @@ class StationApp {
     const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
     const prefectureSelect = document.getElementById('prefecture-select') as HTMLSelectElement | null;
     const sortSelect = document.getElementById('sort-select') as HTMLSelectElement | null;
+    
+    // ページネーションボタン
     const prevButton = document.getElementById('prev-btn') as HTMLButtonElement | null;
     const nextButton = document.getElementById('next-btn') as HTMLButtonElement | null;
+    const firstButton = document.getElementById('first-btn') as HTMLButtonElement | null; // ★追加
+    const lastButton = document.getElementById('last-btn') as HTMLButtonElement | null;   // ★追加
+
     const filterButton = document.getElementById('apply-filter-btn') as HTMLButtonElement | null;
     const resetButton = document.getElementById('reset-filter-btn') as HTMLButtonElement | null;
 
@@ -157,10 +164,23 @@ class StationApp {
     });
 
     nextButton?.addEventListener('click', () => {
-      if (this.lastResultCount === this.pageSize) {
-        this.currentPage += 1;
-        this.loadStations();
-      }
+      // 次のページへ（総ページ数計算はloadStations後のtotalCountに依存しますが、簡易的なチェックとしてlastResultCountも使用可能）
+      // updatePaginationで制御されているため、ここではシンプルに加算
+      this.currentPage += 1;
+      this.loadStations();
+    });
+
+    // ★追加: 最初へボタンの処理
+    firstButton?.addEventListener('click', () => {
+      this.currentPage = 1;
+      this.loadStations();
+    });
+
+    // ★追加: 最後へボタンの処理
+    lastButton?.addEventListener('click', () => {
+      const totalPages = Math.ceil(this.totalCount / this.pageSize);
+      this.currentPage = totalPages > 0 ? totalPages : 1;
+      this.loadStations();
     });
 
     filterButton?.addEventListener('click', () => {
@@ -284,6 +304,8 @@ class StationApp {
       }
       
       this.lastResultCount = sortedData.length;
+      this.totalCount = response.total_count || 0; // ★追加: 全件数を保存
+
       this.renderStationCards(sortedData);
       this.updatePagination();
       this.updateActiveFilters();
@@ -437,10 +459,22 @@ class StationApp {
     const pageInfo = document.getElementById('page-info');
     const prevButton = document.getElementById('prev-btn') as HTMLButtonElement | null;
     const nextButton = document.getElementById('next-btn') as HTMLButtonElement | null;
+    const firstButton = document.getElementById('first-btn') as HTMLButtonElement | null; // ★追加
+    const lastButton = document.getElementById('last-btn') as HTMLButtonElement | null;   // ★追加
 
-    if (pageInfo) pageInfo.textContent = `ページ ${this.currentPage}`;
-    if (prevButton) prevButton.disabled = this.currentPage === 1;
-    if (nextButton) nextButton.disabled = this.lastResultCount < this.pageSize;
+    // ★追加: 総ページ数の計算
+    const totalPages = Math.ceil(this.totalCount / this.pageSize);
+
+    if (pageInfo) pageInfo.textContent = `ページ ${this.currentPage} / ${totalPages || 1}`;
+
+    const isFirstPage = this.currentPage === 1;
+    const isLastPage = this.currentPage >= totalPages || totalPages === 0;
+
+    if (prevButton) prevButton.disabled = isFirstPage;
+    if (firstButton) firstButton.disabled = isFirstPage; // ★追加
+
+    if (nextButton) nextButton.disabled = isLastPage;
+    if (lastButton) lastButton.disabled = isLastPage;   // ★追加
   }
 
   private navigateToDetail(stationId: number): void {
@@ -460,4 +494,3 @@ class StationApp {
 document.addEventListener('DOMContentLoaded', () => {
   new StationApp();
 });
-
