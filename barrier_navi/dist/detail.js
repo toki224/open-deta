@@ -54,13 +54,10 @@ class DetailPage {
     `;
         const rows = detail.metrics
             .map((metric) => {
-            const ratioPercent = Math.round(metric.ratio * 100);
             return `
         <tr class="${metric.met ? 'metric-met' : ''}">
           <td>${this.escape(metric.label)}</td>
           <td class="metric-value">${(_a = metric.value) !== null && _a !== void 0 ? _a : '-'}</td>
-          <td class="metric-required">${metric.required}</td>
-          <td class="metric-ratio">${ratioPercent}%</td>
         </tr>
       `;
         })
@@ -69,7 +66,7 @@ class DetailPage {
     }
     renderError(message) {
         if (this.tableBodyEl) {
-            this.tableBodyEl.innerHTML = `<tr><td colspan="4" class="error">${this.escape(message)}</td></tr>`;
+            this.tableBodyEl.innerHTML = `<tr><td colspan="2" class="error">${this.escape(message)}</td></tr>`;
         }
     }
     escape(text) {
