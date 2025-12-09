@@ -57,16 +57,16 @@ BODY_METRIC_DEFINITIONS: Dict[str, Dict[str, Any]] = {
     "has_accessible_restroom": {"label": "障害者対応型便所の設置の有無", "type": "flag", "required": 1},
     "has_accessible_gate": {"label": "障害者対応型改札口の設置の有無", "type": "flag", "required": 1},
     "has_fall_prevention": {"label": "転落防止のための設備の設置の有無", "type": "flag", "required": 1},
-    "num_platforms": {"label": "プラットホームの数", "type": "number", "required": 6},
-    "num_step_free_platforms": {"label": "段差が解消されているプラットホームの数", "type": "number", "required": 6},
-    "num_elevators": {"label": "エレベーターの設置基数", "type": "number", "required": 4},
-    "num_compliant_elevators": {"label": "移動等円滑化基準に適合しているエレベーターの設置基数", "type": "number", "required": 4},
-    "num_escalators": {"label": "エスカレーターの設置基数", "type": "number", "required": 4},
-    "num_compliant_escalators": {"label": "移動等円滑化基準に適合しているエスカレーターの設置基数", "type": "number", "required": 4},
-    "num_other_lifts": {"label": "その他の昇降機の設置基数", "type": "number", "required": 2},
-    "num_slopes": {"label": "傾斜路の設置箇所数", "type": "number", "required": 2},
-    "num_compliant_slopes": {"label": "移動等円滑化基準に適合している傾斜路の設置箇所数", "type": "number", "required": 2},
-    "num_wheelchair_accessible_platforms": {"label": "車いす使用者の円滑な乗降が可能なプラットホームの数", "type": "number", "required": 6},
+    "num_platforms": {"label": "プラットホームの有無", "type": "number", "required": 6},
+    "num_step_free_platforms": {"label": "段差が解消されているプラットホームの有無", "type": "number", "required": 6},
+    "num_elevators": {"label": "エレベーターの有無", "type": "number", "required": 4},
+    "num_compliant_elevators": {"label": "移動等円滑化基準に適合しているエレベーターの有無", "type": "number", "required": 4},
+    "num_escalators": {"label": "エスカレーターの有無", "type": "number", "required": 4},
+    "num_compliant_escalators": {"label": "移動等円滑化基準に適合しているエスカレーターの有無", "type": "number", "required": 4},
+    "num_other_lifts": {"label": "その他の昇降機の有無", "type": "number", "required": 2},
+    "num_slopes": {"label": "傾斜路の有無", "type": "number", "required": 2},
+    "num_compliant_slopes": {"label": "移動等円滑化基準に適合している傾斜路の有無", "type": "number", "required": 2},
+    "num_wheelchair_accessible_platforms": {"label": "車いす使用者の円滑な乗降が可能なプラットホームの有無", "type": "number", "required": 6},
 }
 
 BODY_BASE_COLUMNS = [
@@ -365,6 +365,17 @@ def get_body_accessible_stations():
         offset = request.args.get('offset', default=0, type=int)
         weights_param = request.args.get('weights', default=None, type=str)
         weights = parse_weight_payload(weights_param)
+        filters_param = request.args.get('filters', default=None, type=str)
+
+        # フィルタリストを取得
+        filter_list = []
+        if filters_param:
+            try:
+                filter_list = json.loads(filters_param)
+                if not isinstance(filter_list, list):
+                    filter_list = []
+            except json.JSONDecodeError:
+                filter_list = []
 
         columns = ", ".join(BODY_QUERY_COLUMNS)
         query = f"SELECT {columns} FROM stations WHERE 1=1"
@@ -376,6 +387,19 @@ def get_body_accessible_stations():
         if prefecture:
             query += " AND prefecture = %s"
             params.append(prefecture)
+
+        # 設備の有無でフィルタリング
+        for filter_key in filter_list:
+            if filter_key in BODY_METRIC_DEFINITIONS:
+                metric_def = BODY_METRIC_DEFINITIONS[filter_key]
+                if metric_def["type"] == "flag":
+                    # flag型: 値が1のもののみ
+                    query += f" AND {filter_key} = %s"
+                    params.append(1)
+                else:
+                    # number型: 値が0より大きいもののみ
+                    query += f" AND {filter_key} > %s"
+                    params.append(0)
 
         query += " ORDER BY station_name LIMIT %s OFFSET %s"
         params.extend([limit, offset])

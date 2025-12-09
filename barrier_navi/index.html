@@ -20,6 +20,15 @@
                     <button id="search-btn" class="primary-btn">検索</button>
                 </div>
 
+                <div class="sort-area">
+                    <label for="sort-select">並び替え:</label>
+                    <select id="sort-select" class="sort-select">
+                        <option value="none">指定なし</option>
+                        <option value="score-asc">点数: 昇順</option>
+                        <option value="score-desc">点数: 降順</option>
+                    </select>
+                </div>
+
                 <div id="loading" class="loading" style="display: none;">
                     <p>読み込み中...</p>
                 </div>
@@ -34,7 +43,7 @@
             </section>
 
             <aside class="filter-panel">
-                <h2>絞り込み機能</h2>
+                <h2>絞り込み</h2>
 
                 <div class="filter-group">
                     <label>障害選択</label>
@@ -49,11 +58,19 @@
                 </div>
 
                 <div class="filter-group">
-                    <label>バリアフリー項目（重み付け）</label>
-                    <div id="weight-list" class="weight-list"></div>
+                    <label>バリアフリー設備で絞り込み</label>
+                    <div id="filter-list" class="filter-list"></div>
                 </div>
 
-                <button id="apply-filter-btn" class="primary-btn">条件を適用</button>
+                <div class="filter-buttons">
+                    <button id="apply-filter-btn" class="primary-btn">条件を適用</button>
+                    <button id="reset-filter-btn" class="ghost-btn">リセット</button>
+                </div>
+
+                <div class="filter-group" id="active-filters-group" style="display: none;">
+                    <label>適用中の条件</label>
+                    <div id="active-filters" class="active-filters"></div>
+                </div>
             </aside>
         </main>
     </div>

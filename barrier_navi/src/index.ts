@@ -57,23 +57,18 @@ const BODY_METRICS: BodyMetricDefinition[] = [
   { key: 'has_accessible_restroom', label: '障害者対応型便所の設置の有無', required: 1, type: 'flag' },
   { key: 'has_accessible_gate', label: '障害者対応型改札口の設置の有無', required: 1, type: 'flag' },
   { key: 'has_fall_prevention', label: '転落防止のための設備の設置の有無', required: 1, type: 'flag' },
-  { key: 'num_platforms', label: 'プラットホームの数', required: 6, type: 'number' },
-  { key: 'num_step_free_platforms', label: '段差が解消されているプラットホームの数', required: 6, type: 'number' },
-  { key: 'num_elevators', label: 'エレベーターの設置基数', required: 4, type: 'number' },
-  { key: 'num_compliant_elevators', label: '適合エレベーターの設置基数', required: 4, type: 'number' },
-  { key: 'num_escalators', label: 'エスカレーターの設置基数', required: 4, type: 'number' },
-  { key: 'num_compliant_escalators', label: '適合エスカレーターの設置基数', required: 4, type: 'number' },
-  { key: 'num_other_lifts', label: 'その他の昇降機の設置基数', required: 2, type: 'number' },
-  { key: 'num_slopes', label: '傾斜路の設置箇所数', required: 2, type: 'number' },
-  { key: 'num_compliant_slopes', label: '適合傾斜路の設置箇所数', required: 2, type: 'number' },
-  { key: 'num_wheelchair_accessible_platforms', label: '車いす乗降が可能なホーム数', required: 6, type: 'number' }
+  { key: 'num_platforms', label: 'プラットホームの有無', required: 6, type: 'number' },
+  { key: 'num_step_free_platforms', label: '段差が解消されているプラットホームの有無', required: 6, type: 'number' },
+  { key: 'num_elevators', label: 'エレベーターの有無', required: 4, type: 'number' },
+  { key: 'num_compliant_elevators', label: '適合エレベーターの有無', required: 4, type: 'number' },
+  { key: 'num_escalators', label: 'エスカレーターの有無', required: 4, type: 'number' },
+  { key: 'num_compliant_escalators', label: '適合エスカレーターの有無', required: 4, type: 'number' },
+  { key: 'num_other_lifts', label: 'その他の昇降機の有無', required: 2, type: 'number' },
+  { key: 'num_slopes', label: '傾斜路の有無', required: 2, type: 'number' },
+  { key: 'num_compliant_slopes', label: '移動等円滑化基準に適合している傾斜路の有無', required: 2, type: 'number' },
+  { key: 'num_wheelchair_accessible_platforms', label: '車いす使用者の円滑な乗降が可能なプラットホームの有無', required: 6, type: 'number' }
 ];
 
-const WEIGHT_OPTIONS = [
-  { label: '高', value: 3 },
-  { label: '中', value: 2 },
-  { label: '低', value: 1 }
-];
 
 class StationApp {
   private apiBaseUrl = 'http://localhost:5000/api';
@@ -82,45 +77,46 @@ class StationApp {
   private selectedPrefecture: string | null = null;
   private keyword: string = '';
   private lastResultCount = 0;
-  private latestWeights: Record<string, number> = {};
+  private selectedFilters: string[] = [];
+  private sortOrder: 'none' | 'score-asc' | 'score-desc' = 'none';
 
   constructor() {
     this.init();
   }
 
   private async init(): Promise<void> {
-    this.renderWeightControls();
+    this.renderFilterControls();
     this.setupEventListeners();
     await this.loadPrefectures();
     await this.loadStations();
   }
 
-  private renderWeightControls(): void {
-    const container = document.getElementById('weight-list');
+  private renderFilterControls(): void {
+    const container = document.getElementById('filter-list');
     if (!container) return;
     container.innerHTML = '';
 
     BODY_METRICS.forEach((metric) => {
       const item = document.createElement('div');
-      item.className = 'weight-item';
+      item.className = 'filter-item';
 
-      const label = document.createElement('span');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.id = `filter-${metric.key}`;
+      checkbox.dataset.metricKey = metric.key;
+      checkbox.className = 'filter-checkbox';
+
+      const label = document.createElement('label');
+      label.htmlFor = `filter-${metric.key}`;
       label.textContent = metric.label;
 
-      const select = document.createElement('select');
-      select.dataset.metricKey = metric.key;
-      select.className = 'weight-select';
-
-      WEIGHT_OPTIONS.forEach((option) => {
-        const opt = document.createElement('option');
-        opt.value = option.value.toString();
-        opt.textContent = option.label;
-        if (option.value === 2) opt.selected = true;
-        select.appendChild(opt);
+      checkbox.addEventListener('change', () => {
+        this.currentPage = 1;
+        this.loadStations();
       });
 
+      item.appendChild(checkbox);
       item.appendChild(label);
-      item.appendChild(select);
       container.appendChild(item);
     });
   }
@@ -129,9 +125,11 @@ class StationApp {
     const searchButton = document.getElementById('search-btn') as HTMLButtonElement | null;
     const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
     const prefectureSelect = document.getElementById('prefecture-select') as HTMLSelectElement | null;
+    const sortSelect = document.getElementById('sort-select') as HTMLSelectElement | null;
     const prevButton = document.getElementById('prev-btn') as HTMLButtonElement | null;
     const nextButton = document.getElementById('next-btn') as HTMLButtonElement | null;
     const filterButton = document.getElementById('apply-filter-btn') as HTMLButtonElement | null;
+    const resetButton = document.getElementById('reset-filter-btn') as HTMLButtonElement | null;
 
     searchButton?.addEventListener('click', () => this.applySearch());
     searchInput?.addEventListener('keypress', (event) => {
@@ -140,6 +138,13 @@ class StationApp {
 
     prefectureSelect?.addEventListener('change', (event) => {
       this.selectedPrefecture = (event.target as HTMLSelectElement).value || null;
+      this.currentPage = 1;
+      this.loadStations();
+    });
+
+    sortSelect?.addEventListener('change', (event) => {
+      const value = (event.target as HTMLSelectElement).value;
+      this.sortOrder = value as 'none' | 'score-asc' | 'score-desc';
       this.currentPage = 1;
       this.loadStations();
     });
@@ -162,6 +167,10 @@ class StationApp {
       this.currentPage = 1;
       this.loadStations();
     });
+
+    resetButton?.addEventListener('click', () => {
+      this.resetFilters();
+    });
   }
 
   private applySearch(): void {
@@ -171,15 +180,50 @@ class StationApp {
     this.loadStations();
   }
 
-  private collectWeights(): Record<string, number> {
-    const selects = document.querySelectorAll<HTMLSelectElement>('.weight-select');
-    const weightMap: Record<string, number> = {};
-    selects.forEach((select) => {
-      const metricKey = select.dataset.metricKey;
-      if (!metricKey) return;
-      weightMap[metricKey] = Number(select.value) || 1;
+  private resetFilters(): void {
+    // 都道府県をリセット
+    const prefectureSelect = document.getElementById('prefecture-select') as HTMLSelectElement | null;
+    if (prefectureSelect) {
+      prefectureSelect.value = '';
+      this.selectedPrefecture = null;
+    }
+
+    // すべてのチェックボックスをリセット
+    const checkboxes = document.querySelectorAll<HTMLInputElement>('.filter-checkbox');
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = false;
     });
-    return weightMap;
+    this.selectedFilters = [];
+
+    // 検索キーワードをリセット
+    const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+    if (searchInput) {
+      searchInput.value = '';
+      this.keyword = '';
+    }
+
+    // ソートをリセット
+    const sortSelect = document.getElementById('sort-select') as HTMLSelectElement | null;
+    if (sortSelect) {
+      sortSelect.value = 'none';
+      this.sortOrder = 'none';
+    }
+
+    // ページをリセットして再読み込み
+    this.currentPage = 1;
+    this.loadStations();
+  }
+
+  private collectFilters(): string[] {
+    const checkboxes = document.querySelectorAll<HTMLInputElement>('.filter-checkbox:checked');
+    const filters: string[] = [];
+    checkboxes.forEach((checkbox) => {
+      const metricKey = checkbox.dataset.metricKey;
+      if (metricKey) {
+        filters.push(metricKey);
+      }
+    });
+    return filters;
   }
 
   private async loadPrefectures(): Promise<void> {
@@ -213,7 +257,7 @@ class StationApp {
     if (loadingIndicator) loadingIndicator.style.display = 'block';
     if (stationsContainer) stationsContainer.innerHTML = '';
 
-    this.latestWeights = this.collectWeights();
+    this.selectedFilters = this.collectFilters();
     const params = new URLSearchParams({
       limit: this.pageSize.toString(),
       offset: ((this.currentPage - 1) * this.pageSize).toString()
@@ -221,18 +265,139 @@ class StationApp {
 
     if (this.selectedPrefecture) params.append('prefecture', this.selectedPrefecture);
     if (this.keyword) params.append('keyword', this.keyword);
-    if (Object.keys(this.latestWeights).length) params.append('weights', JSON.stringify(this.latestWeights));
+    if (this.selectedFilters.length > 0) {
+      params.append('filters', JSON.stringify(this.selectedFilters));
+    }
 
     const response = await this.fetchApi<BodyStationSummary[]>(`/body/stations?${params.toString()}`);
 
     if (loadingIndicator) loadingIndicator.style.display = 'none';
 
     if (response.success && response.data) {
-      this.lastResultCount = response.data.length;
-      this.renderStationCards(response.data);
+      let sortedData = [...response.data];
+      
+      // ソートを適用
+      if (this.sortOrder === 'score-asc') {
+        sortedData.sort((a, b) => a.score.percentage - b.score.percentage);
+      } else if (this.sortOrder === 'score-desc') {
+        sortedData.sort((a, b) => b.score.percentage - a.score.percentage);
+      }
+      
+      this.lastResultCount = sortedData.length;
+      this.renderStationCards(sortedData);
       this.updatePagination();
+      this.updateActiveFilters();
     } else if (stationsContainer) {
       stationsContainer.innerHTML = `<p class="error">データの取得に失敗しました: ${response.error}</p>`;
+    }
+  }
+
+  private updateActiveFilters(): void {
+    const container = document.getElementById('active-filters');
+    const group = document.getElementById('active-filters-group');
+    if (!container || !group) return;
+
+    container.innerHTML = '';
+    const hasFilters = this.selectedPrefecture || this.selectedFilters.length > 0 || this.keyword;
+
+    if (!hasFilters) {
+      group.style.display = 'none';
+      return;
+    }
+
+    group.style.display = 'block';
+
+    // 都道府県セクション
+    if (this.selectedPrefecture) {
+      const section = document.createElement('div');
+      section.className = 'filter-section';
+      section.innerHTML = `
+        <div class="filter-section-header">
+          <span class="filter-icon">📍</span>
+          <span class="filter-section-title">都道府県</span>
+        </div>
+        <div class="filter-chips">
+          <div class="active-filter-chip filter-chip-prefecture">
+            <span>${this.escapeHtml(this.selectedPrefecture)}</span>
+            <button class="filter-remove-btn" data-type="prefecture" aria-label="削除">×</button>
+          </div>
+        </div>
+      `;
+      section.querySelector('.filter-remove-btn')?.addEventListener('click', () => {
+        const select = document.getElementById('prefecture-select') as HTMLSelectElement | null;
+        if (select) {
+          select.value = '';
+          this.selectedPrefecture = null;
+          this.currentPage = 1;
+          this.loadStations();
+        }
+      });
+      container.appendChild(section);
+    }
+
+    // 設備フィルタセクション
+    if (this.selectedFilters.length > 0) {
+      const section = document.createElement('div');
+      section.className = 'filter-section';
+      section.innerHTML = `
+        <div class="filter-section-header">
+          <span class="filter-icon">🔧</span>
+          <span class="filter-section-title">設備条件 <span class="filter-count">(${this.selectedFilters.length}件)</span></span>
+        </div>
+        <div class="filter-chips">
+        </div>
+      `;
+      const chipsContainer = section.querySelector('.filter-chips');
+      
+      this.selectedFilters.forEach((filterKey) => {
+        const metric = BODY_METRICS.find(m => m.key === filterKey);
+        if (!metric) return;
+
+        const chip = document.createElement('div');
+        chip.className = 'active-filter-chip filter-chip-equipment';
+        chip.innerHTML = `
+          <span>${this.escapeHtml(metric.label)}</span>
+          <button class="filter-remove-btn" data-type="filter" data-key="${filterKey}" aria-label="削除">×</button>
+        `;
+        chip.querySelector('.filter-remove-btn')?.addEventListener('click', () => {
+          const checkbox = document.querySelector(`#filter-${filterKey}`) as HTMLInputElement | null;
+          if (checkbox) {
+            checkbox.checked = false;
+            this.currentPage = 1;
+            this.loadStations();
+          }
+        });
+        chipsContainer?.appendChild(chip);
+      });
+      container.appendChild(section);
+    }
+
+    // キーワード検索セクション
+    if (this.keyword) {
+      const section = document.createElement('div');
+      section.className = 'filter-section';
+      section.innerHTML = `
+        <div class="filter-section-header">
+          <span class="filter-icon">🔍</span>
+          <span class="filter-section-title">検索キーワード</span>
+        </div>
+        <div class="filter-chips">
+          <div class="active-filter-chip filter-chip-keyword">
+            <span>"${this.escapeHtml(this.keyword)}"</span>
+            <button class="filter-remove-btn" data-type="keyword" aria-label="削除">×</button>
+          </div>
+        </div>
+      `;
+      section.querySelector('.filter-remove-btn')?.addEventListener('click', () => {
+        const input = document.getElementById('search-input') as HTMLInputElement | null;
+        if (input) {
+          input.value = '';
+          this.keyword = '';
+          this.currentPage = 1;
+          this.loadStations();
+        }
+      });
+      container.appendChild(section);
     }
   }
 
@@ -281,9 +446,6 @@ class StationApp {
   private navigateToDetail(stationId: number): void {
     const url = new URL('detail.html', window.location.href);
     url.searchParams.set('stationId', stationId.toString());
-    if (Object.keys(this.latestWeights).length) {
-      url.searchParams.set('weights', JSON.stringify(this.latestWeights));
-    }
     window.location.href = url.toString();
   }
 

@@ -67,6 +67,28 @@ body {
     font-size: 1rem;
 }
 
+.sort-area {
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sort-area label {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.sort-select {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    background: var(--card);
+    cursor: pointer;
+    min-width: 150px;
+}
+
 .primary-btn,
 .ghost-btn {
     border: none;
@@ -190,6 +212,17 @@ body {
     border: 1px solid var(--border);
 }
 
+.filter-buttons {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.filter-buttons .primary-btn,
+.filter-buttons .ghost-btn {
+    flex: 1;
+}
+
 .chip {
     display: inline-flex;
     align-items: center;
@@ -206,7 +239,7 @@ body {
     border-color: transparent;
 }
 
-.weight-list {
+.filter-list {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -214,9 +247,8 @@ body {
     overflow-y: auto;
 }
 
-.weight-item {
+.filter-item {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     gap: 12px;
     padding: 10px 12px;
@@ -224,13 +256,129 @@ body {
     border-radius: 12px;
     background: #f9f9ff;
     font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
 }
 
-.weight-item select {
-    border: none;
-    background: transparent;
+.filter-item:hover {
+    background: #f0f1ff;
+}
+
+.filter-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary);
+}
+
+.filter-item label {
+    cursor: pointer;
+    flex: 1;
+    user-select: none;
+}
+
+.active-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.filter-section {
+    background: #f8f9ff;
+    border-radius: 12px;
+    padding: 12px;
+    border: 1px solid var(--border);
+}
+
+.filter-section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
     font-weight: 600;
-    color: var(--primary);
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+.filter-icon {
+    font-size: 1.1rem;
+}
+
+.filter-section-title {
+    flex: 1;
+}
+
+.filter-count {
+    font-weight: normal;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.active-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    color: var(--text);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.active-filter-chip:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(31, 42, 65, 0.1);
+}
+
+.filter-chip-prefecture {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border: 1px solid #64b5f6;
+    color: #1565c0;
+}
+
+.filter-chip-equipment {
+    background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+    border: 1px solid #ba68c8;
+    color: #6a1b9a;
+}
+
+.filter-chip-keyword {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    border: 1px solid #ffb74d;
+    color: #e65100;
+}
+
+.active-filter-chip span {
+    flex: 1;
+}
+
+.filter-remove-btn {
+    background: rgba(255, 255, 255, 0.6);
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: background 0.15s ease, transform 0.15s ease;
+    color: inherit;
+}
+
+.filter-remove-btn:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: scale(1.1);
 }
 
 .detail-panel {

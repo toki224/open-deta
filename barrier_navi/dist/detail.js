@@ -45,7 +45,7 @@ class DetailPage {
         if (!this.titleEl || !this.scoreEl || !this.metaEl || !this.tableBodyEl)
             return;
         this.titleEl.textContent = detail.station_name;
-        this.scoreEl.textContent = `${detail.score.label}（${detail.score.percentage}%）`;
+        this.scoreEl.textContent = detail.score.label;
         const city = detail.city ? ` ${detail.city}` : '';
         this.metaEl.innerHTML = `
       <p>鉄道事業者: ${this.escape(detail.operator)}</p>
