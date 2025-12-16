@@ -4,12 +4,14 @@ Flask APIサーバー - stationsデータベースからデータを提供
 
 import json
 import os
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
+from datetime import datetime
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
 from database_connection import DatabaseConnection
+import bcrypt
 
 # .envファイルから環境変数を読み込む
 # 明示的にパスを指定（api_server.pyと同じディレクトリの.envを読み込む）
@@ -456,6 +458,224 @@ def get_body_accessible_station_detail(station_id: int):
             "success": True,
             "data": detail
         })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+# ==================== 認証関連API ====================
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """ログイン処理"""
+    try:
+        data = request.get_json()
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
+        
+        if not username or not password:
+            return jsonify({
+                "success": False,
+                "error": "ユーザー名とパスワードを入力してください"
+            }), 400
+        
+        db = DatabaseConnection(**MYSQL_CONFIG)
+        
+        # ユーザー名またはメールアドレスで検索
+        # usersテーブルのカラム名を確認して適切に変更してください
+        user = db.execute_query(
+            "SELECT * FROM users WHERE username = %s OR email = %s LIMIT 1",
+            (username, username)
+        )
+        
+        if not user:
+            db.close()
+            return jsonify({
+                "success": False,
+                "error": "ユーザー名またはパスワードが正しくありません"
+            }), 401
+        
+        user = user[0]
+        
+        # パスワードの検証
+        # カラム名がpassword_hashの場合はそれを使用、passwordの場合はそれを使用
+        password_hash = user.get('password_hash') or user.get('password')
+        
+        if not password_hash:
+            db.close()
+            return jsonify({
+                "success": False,
+                "error": "パスワード情報が見つかりません"
+            }), 500
+        
+        # bcryptでパスワードを検証
+        try:
+            if isinstance(password_hash, bytes):
+                password_hash = password_hash.decode('utf-8')
+            
+            if not bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8')):
+                db.close()
+                return jsonify({
+                    "success": False,
+                    "error": "ユーザー名またはパスワードが正しくありません"
+                }), 401
+        except Exception as e:
+            # パスワードがハッシュ化されていない場合（開発用）
+            # 本番環境では削除してください
+            if password_hash != password:
+                db.close()
+                return jsonify({
+                    "success": False,
+                    "error": "ユーザー名またはパスワードが正しくありません"
+                }), 401
+        
+        # 最終ログイン日時を更新（カラムが存在する場合）
+        try:
+            db.execute_non_query(
+                "UPDATE users SET last_login_at = %s WHERE id = %s",
+                (datetime.now(), user['id'])
+            )
+        except:
+            pass  # last_login_atカラムが存在しない場合はスキップ
+        
+        db.close()
+        
+        # パスワード情報を除外して返す
+        user_response = {k: v for k, v in user.items() if k not in ['password', 'password_hash']}
+        
+        return jsonify({
+            "success": True,
+            "data": user_response
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/api/auth/signup', methods=['POST'])
+def signup():
+    """新規ユーザー登録"""
+    try:
+        data = request.get_json()
+        username = data.get('username', '').strip()
+        email = data.get('email', '').strip()
+        password = data.get('password', '')
+        
+        if not username or not email or not password:
+            return jsonify({
+                "success": False,
+                "error": "すべての項目を入力してください"
+            }), 400
+        
+        if len(password) < 8:
+            return jsonify({
+                "success": False,
+                "error": "パスワードは8文字以上で入力してください"
+            }), 400
+        
+        db = DatabaseConnection(**MYSQL_CONFIG)
+        
+        # ユーザー名の重複チェック
+        existing_user = db.execute_query(
+            "SELECT id FROM users WHERE username = %s LIMIT 1",
+            (username,)
+        )
+        if existing_user:
+            db.close()
+            return jsonify({
+                "success": False,
+                "error": "このユーザー名は既に使用されています"
+            }), 400
+        
+        # メールアドレスの重複チェック
+        existing_email = db.execute_query(
+            "SELECT id FROM users WHERE email = %s LIMIT 1",
+            (email,)
+        )
+        if existing_email:
+            db.close()
+            return jsonify({
+                "success": False,
+                "error": "このメールアドレスは既に使用されています"
+            }), 400
+        
+        # パスワードをハッシュ化
+        password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        
+        # ユーザーを登録
+        # usersテーブルのカラム: id, username, email, password_hash
+        try:
+            db.execute_non_query(
+                "INSERT INTO users (username, email, password_hash) VALUES (%s, %s, %s)",
+                (username, email, password_hash)
+            )
+        except Exception as e:
+            db.close()
+            return jsonify({
+                "success": False,
+                "error": f"ユーザー登録に失敗しました: {str(e)}"
+            }), 500
+        
+        db.close()
+        
+        return jsonify({
+            "success": True,
+            "message": "アカウントが作成されました"
+        })
+        
+    except Exception as e:
+        import traceback
+        error_detail = traceback.format_exc()
+        print(f"Signup error: {error_detail}")
+        return jsonify({
+            "success": False,
+            "error": f"ユーザー登録に失敗しました: {str(e)}"
+        }), 500
+
+
+@app.route('/api/auth/reset-password', methods=['POST'])
+def reset_password():
+    """パスワードリセット（メール送信は未実装）"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip()
+        
+        if not email:
+            return jsonify({
+                "success": False,
+                "error": "メールアドレスを入力してください"
+            }), 400
+        
+        db = DatabaseConnection(**MYSQL_CONFIG)
+        
+        # ユーザーを検索
+        user = db.execute_query(
+            "SELECT id, email FROM users WHERE email = %s LIMIT 1",
+            (email,)
+        )
+        
+        if not user:
+            # セキュリティ上の理由で、ユーザーが存在しない場合も成功を返す
+            db.close()
+            return jsonify({
+                "success": True,
+                "message": "パスワードリセット用のリンクをメールアドレスに送信しました"
+            })
+        
+        # ここで実際にはメール送信処理を行う
+        # 今回は簡易的に成功を返す
+        db.close()
+        
+        return jsonify({
+            "success": True,
+            "message": "パスワードリセット用のリンクをメールアドレスに送信しました"
+        })
+        
     except Exception as e:
         return jsonify({
             "success": False,

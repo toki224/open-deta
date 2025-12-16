@@ -8,3 +8,6 @@ flask-cors>=4.0.0
 # 環境変数管理
 python-dotenv>=1.0.0
 
+# パスワードハッシュ化
+bcrypt>=4.0.0
+
