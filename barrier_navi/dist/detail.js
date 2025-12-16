@@ -28,7 +28,7 @@ class DetailPage {
             this.renderDetail(response.data);
         }
         else {
-            this.renderError((response === null || response === void 0 ? void 0 : response.error) || 'データを取得できませんでした。');
+            this.renderError(response.error || 'データを取得できませんでした。');
         }
     }
     async fetchApi(endpoint) {
@@ -41,7 +41,6 @@ class DetailPage {
         }
     }
     renderDetail(detail) {
-        var _a, _b, _c, _d;
         if (!this.titleEl || !this.scoreEl || !this.metaEl || !this.tableBodyEl)
             return;
         this.titleEl.textContent = detail.station_name;
@@ -52,16 +51,14 @@ class DetailPage {
       <p>路線: ${this.escape(detail.line_name)}</p>
       <p>所在地: ${this.escape(detail.prefecture)}${this.escape(city)}</p>
     `;
-        const rows = detail.metrics
-            .map((metric) => {
+        const rows = detail.metrics.map((metric) => {
             return `
         <tr class="${metric.met ? 'metric-met' : ''}">
           <td>${this.escape(metric.label)}</td>
-          <td class="metric-value">${(_a = metric.value) !== null && _a !== void 0 ? _a : '-'}</td>
+          <td class="metric-value">${metric.value ?? '-'}</td>
         </tr>
       `;
-        })
-            .join('');
+        }).join('');
         this.tableBodyEl.innerHTML = rows;
     }
     renderError(message) {
@@ -76,4 +73,4 @@ class DetailPage {
     }
 }
 document.addEventListener('DOMContentLoaded', () => new DetailPage());
-
+//# sourceMappingURL=detail.js.map

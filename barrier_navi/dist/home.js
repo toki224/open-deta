@@ -1,3 +1,4 @@
+"use strict";
 /**
  * バリアナビ ホーム画面
  */
@@ -7,12 +8,15 @@ class HomePage {
     }
     init() {
         const profileBtn = document.getElementById('profile-btn');
-        profileBtn === null || profileBtn === void 0 ? void 0 : profileBtn.addEventListener('click', () => {
+        profileBtn?.addEventListener('click', () => {
+            // プロフィール画面への遷移（未実装の場合はアラート）
             alert('プロフィール画面は準備中です');
+            // 実装時は以下のように変更
+            // window.location.href = 'profile.html';
         });
     }
 }
 document.addEventListener('DOMContentLoaded', () => {
     new HomePage();
 });
-
+//# sourceMappingURL=home.js.map

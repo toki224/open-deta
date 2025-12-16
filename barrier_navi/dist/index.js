@@ -1,3 +1,4 @@
+"use strict";
 /**
  * バリアナビ（身体障害向け）フロントエンド
  */
@@ -18,7 +19,6 @@ const BODY_METRICS = [
     { key: 'num_compliant_slopes', label: '移動等円滑化基準に適合している傾斜路の有無', required: 2, type: 'number' },
     { key: 'num_wheelchair_accessible_platforms', label: '車いす使用者の円滑な乗降が可能なプラットホームの有無', required: 6, type: 'number' }
 ];
-
 class StationApp {
     constructor() {
         this.apiBaseUrl = 'http://localhost:5000/api';
@@ -36,6 +36,7 @@ class StationApp {
         this.renderFilterControls();
         this.setupEventListeners();
         await this.loadPrefectures();
+        await this.fetchLines();
         await this.loadStations();
     }
     renderFilterControls() {
@@ -68,87 +69,101 @@ class StationApp {
         const searchInput = document.getElementById('search-input');
         const prefectureSelect = document.getElementById('prefecture-select');
         const sortSelect = document.getElementById('sort-select');
+        // ページネーションボタン
         const prevButton = document.getElementById('prev-btn');
         const nextButton = document.getElementById('next-btn');
         const firstButton = document.getElementById('first-btn'); // ★追加
-        const lastButton = document.getElementById('last-btn');   // ★追加
+        const lastButton = document.getElementById('last-btn'); // ★追加
         const filterButton = document.getElementById('apply-filter-btn');
         const resetButton = document.getElementById('reset-filter-btn');
-        searchButton === null || searchButton === void 0 ? void 0 : searchButton.addEventListener('click', () => this.applySearch());
-        searchInput === null || searchInput === void 0 ? void 0 : searchInput.addEventListener('keypress', (event) => {
+        const lineSelect = document.getElementById('line-select');
+        searchButton?.addEventListener('click', () => this.applySearch());
+        searchInput?.addEventListener('keypress', (event) => {
             if (event.key === 'Enter')
                 this.applySearch();
         });
-        prefectureSelect === null || prefectureSelect === void 0 ? void 0 : prefectureSelect.addEventListener('change', (event) => {
-            var _a;
-            this.selectedPrefecture = ((_a = event.target) === null || _a === void 0 ? void 0 : _a.value) || null;
+        prefectureSelect?.addEventListener('change', (event) => {
+            this.selectedPrefecture = event.target.value || null;
             this.currentPage = 1;
             this.loadStations();
         });
-        sortSelect === null || sortSelect === void 0 ? void 0 : sortSelect.addEventListener('change', (event) => {
-            var _a;
-            const value = ((_a = event.target) === null || _a === void 0 ? void 0 : _a.value);
+        sortSelect?.addEventListener('change', (event) => {
+            const value = event.target.value;
             this.sortOrder = value;
             this.currentPage = 1;
             this.loadStations();
         });
-        prevButton === null || prevButton === void 0 ? void 0 : prevButton.addEventListener('click', () => {
+        prevButton?.addEventListener('click', () => {
             if (this.currentPage > 1) {
                 this.currentPage -= 1;
                 this.loadStations();
             }
         });
-        nextButton === null || nextButton === void 0 ? void 0 : nextButton.addEventListener('click', () => {
-            // 次のページへ（簡易チェック）
+        nextButton?.addEventListener('click', () => {
+            // 次のページへ（総ページ数計算はloadStations後のtotalCountに依存しますが、簡易的なチェックとしてlastResultCountも使用可能）
+            // updatePaginationで制御されているため、ここではシンプルに加算
             this.currentPage += 1;
             this.loadStations();
         });
         // ★追加: 最初へボタンの処理
-        firstButton === null || firstButton === void 0 ? void 0 : firstButton.addEventListener('click', () => {
+        firstButton?.addEventListener('click', () => {
             this.currentPage = 1;
             this.loadStations();
         });
         // ★追加: 最後へボタンの処理
-        lastButton === null || lastButton === void 0 ? void 0 : lastButton.addEventListener('click', () => {
+        lastButton?.addEventListener('click', () => {
             const totalPages = Math.ceil(this.totalCount / this.pageSize);
             this.currentPage = totalPages > 0 ? totalPages : 1;
             this.loadStations();
         });
-        filterButton === null || filterButton === void 0 ? void 0 : filterButton.addEventListener('click', () => {
+        filterButton?.addEventListener('click', () => {
             this.currentPage = 1;
             this.loadStations();
         });
-        resetButton === null || resetButton === void 0 ? void 0 : resetButton.addEventListener('click', () => {
+        resetButton?.addEventListener('click', () => {
             this.resetFilters();
+        });
+        lineSelect?.addEventListener('change', () => {
+            this.currentPage = 1;
+            this.loadStations();
         });
     }
     applySearch() {
         const searchInput = document.getElementById('search-input');
-        this.keyword = (searchInput === null || searchInput === void 0 ? void 0 : searchInput.value.trim()) || '';
+        this.keyword = searchInput?.value.trim() || '';
         this.currentPage = 1;
         this.loadStations();
     }
     resetFilters() {
+        // 都道府県をリセット
         const prefectureSelect = document.getElementById('prefecture-select');
         if (prefectureSelect) {
             prefectureSelect.value = '';
             this.selectedPrefecture = null;
         }
+        // すべてのチェックボックスをリセット
         const checkboxes = document.querySelectorAll('.filter-checkbox');
         checkboxes.forEach((checkbox) => {
             checkbox.checked = false;
         });
         this.selectedFilters = [];
+        // 検索キーワードをリセット
         const searchInput = document.getElementById('search-input');
         if (searchInput) {
             searchInput.value = '';
             this.keyword = '';
         }
+        // ソートをリセット
         const sortSelect = document.getElementById('sort-select');
         if (sortSelect) {
             sortSelect.value = 'none';
             this.sortOrder = 'none';
         }
+        const lineSelect = document.getElementById('line-select');
+        if (lineSelect) {
+            lineSelect.value = '';
+        }
+        // ページをリセットして再読み込み
         this.currentPage = 1;
         this.loadStations();
     }
@@ -207,11 +222,19 @@ class StationApp {
         if (this.selectedFilters.length > 0) {
             params.append('filters', JSON.stringify(this.selectedFilters));
         }
+        const lineSelect = document.getElementById('line-select');
+        if (lineSelect && lineSelect.value) {
+            params.append('line_name', lineSelect.value);
+        }
+        if (this.selectedFilters.length > 0) {
+            params.append('filters', JSON.stringify(this.selectedFilters));
+        }
         const response = await this.fetchApi(`/body/stations?${params.toString()}`);
         if (loadingIndicator)
             loadingIndicator.style.display = 'none';
         if (response.success && response.data) {
             let sortedData = [...response.data];
+            // ソートを適用
             if (this.sortOrder === 'score-asc') {
                 sortedData.sort((a, b) => a.score.percentage - b.score.percentage);
             }
@@ -240,6 +263,7 @@ class StationApp {
             return;
         }
         group.style.display = 'block';
+        // 都道府県セクション
         if (this.selectedPrefecture) {
             const section = document.createElement('div');
             section.className = 'filter-section';
@@ -266,6 +290,7 @@ class StationApp {
             });
             container.appendChild(section);
         }
+        // 設備フィルタセクション
         if (this.selectedFilters.length > 0) {
             const section = document.createElement('div');
             section.className = 'filter-section';
@@ -296,10 +321,11 @@ class StationApp {
                         this.loadStations();
                     }
                 });
-                chipsContainer === null || chipsContainer === void 0 ? void 0 : chipsContainer.appendChild(chip);
+                chipsContainer?.appendChild(chip);
             });
             container.appendChild(section);
         }
+        // キーワード検索セクション
         if (this.keyword) {
             const section = document.createElement('div');
             section.className = 'filter-section';
@@ -362,7 +388,7 @@ class StationApp {
         const prevButton = document.getElementById('prev-btn');
         const nextButton = document.getElementById('next-btn');
         const firstButton = document.getElementById('first-btn'); // ★追加
-        const lastButton = document.getElementById('last-btn');   // ★追加
+        const lastButton = document.getElementById('last-btn'); // ★追加
         // ★追加: 総ページ数の計算
         const totalPages = Math.ceil(this.totalCount / this.pageSize);
         if (pageInfo)
@@ -390,7 +416,29 @@ class StationApp {
         div.textContent = text;
         return div.innerHTML;
     }
+    async fetchLines() {
+        const lineSelect = document.getElementById('line-select');
+        if (!lineSelect)
+            return;
+        try {
+            const res = await fetch('http://localhost:5000/api/lines');
+            const json = await res.json();
+            if (json.success) {
+                lineSelect.innerHTML = '<option value="">指定なし</option>';
+                json.data.forEach((line) => {
+                    const option = document.createElement('option');
+                    option.value = line;
+                    option.textContent = line;
+                    lineSelect.appendChild(option);
+                });
+            }
+        }
+        catch (error) {
+            console.error('Failed to fetch lines:', error);
+        }
+    }
 }
 document.addEventListener('DOMContentLoaded', () => {
     new StationApp();
 });
+//# sourceMappingURL=index.js.map
