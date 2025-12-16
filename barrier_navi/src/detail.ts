@@ -54,11 +54,7 @@ class DetailPage {
       return;
     }
 
-    const weights = params.get('weights');
-    const query = new URLSearchParams();
-    if (weights) query.set('weights', weights);
-
-    const response = await this.fetchApi<DetailStation>(`/body/stations/${stationId}?${query.toString()}`);
+    const response = await this.fetchApi<DetailStation>(`/body/stations/${stationId}`);
     if (response.success && response.data) {
       this.renderDetail(response.data);
     } else {

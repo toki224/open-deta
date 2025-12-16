@@ -57,16 +57,16 @@ BODY_METRIC_DEFINITIONS: Dict[str, Dict[str, Any]] = {
     "has_accessible_restroom": {"label": "障害者対応型便所の設置の有無", "type": "flag", "required": 1},
     "has_accessible_gate": {"label": "障害者対応型改札口の設置の有無", "type": "flag", "required": 1},
     "has_fall_prevention": {"label": "転落防止のための設備の設置の有無", "type": "flag", "required": 1},
-    "num_platforms": {"label": "プラットホームの有無", "type": "number", "required": 6},
-    "num_step_free_platforms": {"label": "段差が解消されているプラットホームの有無", "type": "number", "required": 6},
-    "num_elevators": {"label": "エレベーターの有無", "type": "number", "required": 4},
-    "num_compliant_elevators": {"label": "移動等円滑化基準に適合しているエレベーターの有無", "type": "number", "required": 4},
-    "num_escalators": {"label": "エスカレーターの有無", "type": "number", "required": 4},
-    "num_compliant_escalators": {"label": "移動等円滑化基準に適合しているエスカレーターの有無", "type": "number", "required": 4},
-    "num_other_lifts": {"label": "その他の昇降機の有無", "type": "number", "required": 2},
-    "num_slopes": {"label": "傾斜路の有無", "type": "number", "required": 2},
-    "num_compliant_slopes": {"label": "移動等円滑化基準に適合している傾斜路の有無", "type": "number", "required": 2},
-    "num_wheelchair_accessible_platforms": {"label": "車いす使用者の円滑な乗降が可能なプラットホームの有無", "type": "number", "required": 6},
+    "num_platforms": {"label": "プラットホームの数", "type": "number", "required": 6},
+    "num_step_free_platforms": {"label": "段差が解消されているプラットホームの数", "type": "number", "required": 6},
+    "num_elevators": {"label": "エレベーターの設置基数", "type": "number", "required": 4},
+    "num_compliant_elevators": {"label": "移動等円滑化基準に適合しているエレベーターの設置基数", "type": "number", "required": 4},
+    "num_escalators": {"label": "エスカレーターの設置基数", "type": "number", "required": 4},
+    "num_compliant_escalators": {"label": "移動等円滑化基準に適合しているエスカレーターの設置基数", "type": "number", "required": 4},
+    "num_other_lifts": {"label": "その他の昇降機の設置基数", "type": "number", "required": 2},
+    "num_slopes": {"label": "傾斜路の設置箇所数", "type": "number", "required": 2},
+    "num_compliant_slopes": {"label": "移動等円滑化基準に適合している傾斜路の設置箇所数", "type": "number", "required": 2},
+    "num_wheelchair_accessible_platforms": {"label": "車いす使用者の円滑な乗降が可能なプラットホームの数", "type": "number", "required": 6},
 }
 
 BODY_BASE_COLUMNS = [
@@ -78,27 +78,6 @@ BODY_BASE_COLUMNS = [
     "city"
 ]
 BODY_QUERY_COLUMNS = BODY_BASE_COLUMNS + list(BODY_METRIC_DEFINITIONS.keys())
-
-
-def parse_weight_payload(payload: str) -> Dict[str, float]:
-    """重み付け設定をJSON文字列から取得"""
-    default_weight = 2.0
-    weights = {key: default_weight for key in BODY_METRIC_DEFINITIONS}
-    if not payload:
-        return weights
-    try:
-        data = json.loads(payload)
-        if isinstance(data, dict):
-            for key, value in data.items():
-                try:
-                    numeric_value = float(value)
-                except (TypeError, ValueError):
-                    continue
-                if key in weights and numeric_value > 0:
-                    weights[key] = numeric_value
-    except json.JSONDecodeError:
-        pass
-    return weights
 
 
 def evaluate_metric(value: Any, definition: Dict[str, Any]) -> Dict[str, Any]:
@@ -122,17 +101,13 @@ def evaluate_metric(value: Any, definition: Dict[str, Any]) -> Dict[str, Any]:
     return result
 
 
-def compute_body_score(row: Dict[str, Any], weights: Dict[str, float], include_details: bool = False) -> Dict[str, Any]:
-    total_weight = 0.0
-    achieved_weight = 0.0
+def compute_body_score(row: Dict[str, Any], include_details: bool = False) -> Dict[str, Any]:
+    """身体障害向けスコアを計算（重み付けなし、単純に達成項目数をカウント）"""
     met_items = 0
     details: List[Dict[str, Any]] = []
 
     for field, definition in BODY_METRIC_DEFINITIONS.items():
-        weight = weights.get(field, 1.0)
-        total_weight += weight
         metric_result = evaluate_metric(row.get(field), definition)
-        achieved_weight += metric_result["ratio"] * weight
         if metric_result["met"]:
             met_items += 1
 
@@ -144,23 +119,22 @@ def compute_body_score(row: Dict[str, Any], weights: Dict[str, float], include_d
                 "raw_value": metric_result["raw_value"],
                 "ratio": round(metric_result["ratio"], 2),
                 "met": metric_result["met"],
-                "type": definition["type"],
-                "weight": weight
+                "type": definition["type"]
             })
 
-    percentage = (achieved_weight / total_weight) * 100 if total_weight else 0
+    total_items = len(BODY_METRIC_DEFINITIONS)
+    percentage = (met_items / total_items) * 100 if total_items > 0 else 0
+    
     return {
         "met_items": met_items,
-        "total_items": len(BODY_METRIC_DEFINITIONS),
+        "total_items": total_items,
         "percentage": round(percentage, 1),
-        "weighted_score": round(achieved_weight, 2),
-        "max_weighted_score": round(total_weight, 2),
         "details": details if include_details else None
     }
 
 
-def build_body_station_response(row: Dict[str, Any], weights: Dict[str, float], include_details: bool = False) -> Dict[str, Any]:
-    score = compute_body_score(row, weights, include_details=include_details)
+def build_body_station_response(row: Dict[str, Any], include_details: bool = False) -> Dict[str, Any]:
+    score = compute_body_score(row, include_details=include_details)
     response = {
         "station_id": row.get("id"),
         "station_name": row.get("station_name"),
@@ -183,8 +157,6 @@ def build_body_station_response(row: Dict[str, Any], weights: Dict[str, float], 
             metrics_without_required.append(metric_copy)
         
         response["metrics"] = metrics_without_required
-        response["score"]["weighted_score"] = score["weighted_score"]
-        response["score"]["max_weighted_score"] = score["max_weighted_score"]
     return response
 
 
@@ -363,8 +335,6 @@ def get_body_accessible_stations():
         prefecture = request.args.get('prefecture', default=None, type=str)
         limit = request.args.get('limit', default=20, type=int)
         offset = request.args.get('offset', default=0, type=int)
-        weights_param = request.args.get('weights', default=None, type=str)
-        weights = parse_weight_payload(weights_param)
         filters_param = request.args.get('filters', default=None, type=str)
 
         # フィルタリストを取得
@@ -415,7 +385,7 @@ def get_body_accessible_stations():
         
         db.close()
 
-        data = [build_body_station_response(row, weights, include_details=False) for row in rows]
+        data = [build_body_station_response(row, include_details=False) for row in rows]
 
         return jsonify({
             "success": True,
@@ -434,9 +404,6 @@ def get_body_accessible_stations():
 def get_body_accessible_station_detail(station_id: int):
     """身体障害者向けスコアの詳細"""
     try:
-        weights_param = request.args.get('weights', default=None, type=str)
-        weights = parse_weight_payload(weights_param)
-
         columns = ", ".join(BODY_QUERY_COLUMNS)
         query = f"SELECT {columns} FROM stations WHERE id = %s"
 
@@ -450,7 +417,7 @@ def get_body_accessible_station_detail(station_id: int):
                 "error": "Station not found"
             }), 404
 
-        detail = build_body_station_response(rows[0], weights, include_details=True)
+        detail = build_body_station_response(rows[0], include_details=True)
 
         return jsonify({
             "success": True,
