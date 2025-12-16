@@ -37,10 +37,6 @@ class DetailPage {
         }
     }
     renderDetail(detail) {
-<<<<<<< HEAD
-=======
-        var _a;
->>>>>>> 648b75248cbef8bc9a756f694c33a9b32ce968b7
         if (!this.titleEl || !this.scoreEl || !this.metaEl || !this.tableBodyEl)
             return;
         this.titleEl.textContent = detail.station_name;
@@ -51,13 +47,6 @@ class DetailPage {
       <p>路線: ${this.escape(detail.line_name)}</p>
       <p>所在地: ${this.escape(detail.prefecture)}${this.escape(city)}</p>
     `;
-<<<<<<< HEAD
-        const rows = detail.metrics.map((metric) => {
-            return `
-        <tr class="${metric.met ? 'metric-met' : ''}">
-          <td>${this.escape(metric.label)}</td>
-          <td class="metric-value">${metric.value ?? '-'}</td>
-=======
         // デバッグ用：APIレスポンス全体を確認
         console.log('Detail data:', detail);
         console.log('Metrics:', detail.metrics);
@@ -77,7 +66,7 @@ class DetailPage {
             }
             else {
                 // フラグ型：○/×を表示
-                valueDisplay = String((_a = metric.value) !== null && _a !== void 0 ? _a : '-');
+                valueDisplay = String(metric.value ?? '-');
                 requiredDisplay = '設置あり';
             }
             return `
@@ -85,7 +74,6 @@ class DetailPage {
           <td>${this.escape(metric.label)}</td>
           <td class="metric-value">${this.escape(valueDisplay)}</td>
           <td class="metric-required">${this.escape(requiredDisplay)}</td>
->>>>>>> 648b75248cbef8bc9a756f694c33a9b32ce968b7
         </tr>
       `;
         }).join('');
@@ -103,7 +91,4 @@ class DetailPage {
     }
 }
 document.addEventListener('DOMContentLoaded', () => new DetailPage());
-<<<<<<< HEAD
 //# sourceMappingURL=detail.js.map
-=======
->>>>>>> 648b75248cbef8bc9a756f694c33a9b32ce968b7

@@ -13,9 +13,11 @@ interface DetailMetric {
     key: string;
     label: string;
     value: number | string | null;
+    raw_value: number | string | null;
     required: number;
     ratio: number;
     met: boolean;
+    type: string;
 }
 interface DetailStation {
     station_id: number;

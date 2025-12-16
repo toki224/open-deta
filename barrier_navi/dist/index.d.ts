@@ -13,8 +13,6 @@ interface BodyScoreSummary {
     total_items: number;
     percentage: number;
     label: string;
-    weighted_score?: number;
-    max_weighted_score?: number;
 }
 interface BodyStationSummary {
     station_id: number;
@@ -30,11 +28,9 @@ interface BodyMetricDetail {
     label: string;
     value: number | string | null;
     raw_value: number | string | null;
-    required: number;
     ratio: number;
     met: boolean;
     type: string;
-    weight: number;
 }
 interface BodyStationDetail extends BodyStationSummary {
     metrics: BodyMetricDetail[];

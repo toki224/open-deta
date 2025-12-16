@@ -3,21 +3,23 @@
  * バリアナビ（身体障害向け）フロントエンド
  */
 const BODY_METRICS = [
+    // フラグ型（〇×で表せる項目）：設置されていれば1点
     { key: 'step_response_status', label: '段差への対応', required: 1, type: 'flag' },
     { key: 'has_guidance_system', label: '案内設備の設置の有無', required: 1, type: 'flag' },
     { key: 'has_accessible_restroom', label: '障害者対応型便所の設置の有無', required: 1, type: 'flag' },
     { key: 'has_accessible_gate', label: '障害者対応型改札口の設置の有無', required: 1, type: 'flag' },
     { key: 'has_fall_prevention', label: '転落防止のための設備の設置の有無', required: 1, type: 'flag' },
-    { key: 'num_platforms', label: 'プラットホームの有無', required: 6, type: 'number' },
-    { key: 'num_step_free_platforms', label: '段差が解消されているプラットホームの有無', required: 6, type: 'number' },
-    { key: 'num_elevators', label: 'エレベーターの有無', required: 4, type: 'number' },
-    { key: 'num_compliant_elevators', label: '適合エレベーターの有無', required: 4, type: 'number' },
-    { key: 'num_escalators', label: 'エスカレーターの有無', required: 4, type: 'number' },
-    { key: 'num_compliant_escalators', label: '適合エスカレーターの有無', required: 4, type: 'number' },
-    { key: 'num_other_lifts', label: 'その他の昇降機の有無', required: 2, type: 'number' },
-    { key: 'num_slopes', label: '傾斜路の有無', required: 2, type: 'number' },
-    { key: 'num_compliant_slopes', label: '移動等円滑化基準に適合している傾斜路の有無', required: 2, type: 'number' },
-    { key: 'num_wheelchair_accessible_platforms', label: '車いす使用者の円滑な乗降が可能なプラットホームの有無', required: 6, type: 'number' }
+    // 数値型（基準値以上であれば1点、未満なら0点）
+    { key: 'num_platforms', label: 'プラットホームの数', required: 6, type: 'number' },
+    { key: 'num_step_free_platforms', label: '段差が解消されているプラットホームの数', required: 6, type: 'number' },
+    { key: 'num_elevators', label: 'エレベーターの設置基数', required: 4, type: 'number' },
+    { key: 'num_compliant_elevators', label: '移動等円滑化基準に適合しているエレベーターの設置基数', required: 4, type: 'number' },
+    { key: 'num_escalators', label: 'エスカレーターの設置基数', required: 4, type: 'number' },
+    { key: 'num_compliant_escalators', label: '移動等円滑化基準に適合しているエスカレーターの設置基数', required: 4, type: 'number' },
+    { key: 'num_other_lifts', label: 'その他の昇降機の設置基数', required: 2, type: 'number' },
+    { key: 'num_slopes', label: '傾斜路の設置箇所数', required: 2, type: 'number' },
+    { key: 'num_compliant_slopes', label: '移動等円滑化基準に適合している傾斜路の設置箇所数', required: 2, type: 'number' },
+    { key: 'num_wheelchair_accessible_platforms', label: '車いす使用者の円滑な乗降が可能なプラットホームの数', required: 6, type: 'number' }
 ];
 class StationApp {
     constructor() {
