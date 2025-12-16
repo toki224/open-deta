@@ -15,9 +15,11 @@ interface DetailMetric {
   key: string;
   label: string;
   value: number | string | null;
+  raw_value: number | string | null;
   required: number;
   ratio: number;
   met: boolean;
+  type: string;
 }
 
 interface DetailStation {
@@ -82,11 +84,36 @@ class DetailPage {
       <p>所在地: ${this.escape(detail.prefecture)}${this.escape(city)}</p>
     `;
 
+    // デバッグ用：APIレスポンス全体を確認
+    console.log('Detail data:', detail);
+    console.log('Metrics:', detail.metrics);
+    
     const rows = detail.metrics.map((metric) => {
+      // 値の表示
+      let valueDisplay = '';
+      let requiredDisplay = '';
+      
+      // デバッグ用：各metricオブジェクトを確認
+      console.log('Metric:', metric, 'required:', metric.required);
+      
+      if (metric.type === 'number') {
+        // 数値型：実際の値を表示
+        const rawValue = typeof metric.raw_value === 'number' ? metric.raw_value : (metric.value !== null && typeof metric.value === 'number' ? metric.value : 0);
+        valueDisplay = `${rawValue}`;
+        // requiredが存在するかチェック（APIレスポンスに含まれているか確認）
+        const required = (metric.required !== undefined && metric.required !== null) ? metric.required : '不明';
+        requiredDisplay = `${required}以上`;
+      } else {
+        // フラグ型：○/×を表示
+        valueDisplay = String(metric.value ?? '-');
+        requiredDisplay = '設置あり';
+      }
+      
       return `
         <tr class="${metric.met ? 'metric-met' : ''}">
           <td>${this.escape(metric.label)}</td>
-          <td class="metric-value">${metric.value ?? '-'}</td>
+          <td class="metric-value">${this.escape(valueDisplay)}</td>
+          <td class="metric-required">${this.escape(requiredDisplay)}</td>
         </tr>
       `;
     }).join('');
@@ -95,7 +122,7 @@ class DetailPage {
 
   private renderError(message: string): void {
     if (this.tableBodyEl) {
-      this.tableBodyEl.innerHTML = `<tr><td colspan="2" class="error">${this.escape(message)}</td></tr>`;
+      this.tableBodyEl.innerHTML = `<tr><td colspan="3" class="error">${this.escape(message)}</td></tr>`;
     }
   }
 

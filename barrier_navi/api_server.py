@@ -52,11 +52,13 @@ if not MYSQL_CONFIG["password"]:
     print("   MYSQL_DATABASE=station\n")
 
 BODY_METRIC_DEFINITIONS: Dict[str, Dict[str, Any]] = {
+    # フラグ型（〇×で表せる項目）：設置されていれば1点
     "step_response_status": {"label": "段差への対応", "type": "flag", "required": 1},
     "has_guidance_system": {"label": "案内設備の設置の有無", "type": "flag", "required": 1},
     "has_accessible_restroom": {"label": "障害者対応型便所の設置の有無", "type": "flag", "required": 1},
     "has_accessible_gate": {"label": "障害者対応型改札口の設置の有無", "type": "flag", "required": 1},
     "has_fall_prevention": {"label": "転落防止のための設備の設置の有無", "type": "flag", "required": 1},
+    # 数値型（基準値以上であれば1点、未満なら0点）
     "num_platforms": {"label": "プラットホームの数", "type": "number", "required": 6},
     "num_step_free_platforms": {"label": "段差が解消されているプラットホームの数", "type": "number", "required": 6},
     "num_elevators": {"label": "エレベーターの設置基数", "type": "number", "required": 4},
@@ -119,7 +121,8 @@ def compute_body_score(row: Dict[str, Any], include_details: bool = False) -> Di
                 "raw_value": metric_result["raw_value"],
                 "ratio": round(metric_result["ratio"], 2),
                 "met": metric_result["met"],
-                "type": definition["type"]
+                "type": definition["type"],
+                "required": definition["required"]
             })
 
     total_items = len(BODY_METRIC_DEFINITIONS)
@@ -150,13 +153,13 @@ def build_body_station_response(row: Dict[str, Any], include_details: bool = Fal
         }
     }
     if include_details:
-        # metricsから"required"を除外
-        metrics_without_required = []
-        for metric in score["details"]:
-            metric_copy = {k: v for k, v in metric.items() if k != "required"}
-            metrics_without_required.append(metric_copy)
-        
-        response["metrics"] = metrics_without_required
+        # metricsにrequiredを含める（デバッグ用：各metricにrequiredが含まれているか確認）
+        metrics = score["details"]
+        # 念のため、各metricにrequiredが含まれているか確認してログ出力
+        for metric in metrics:
+            if "required" not in metric:
+                print(f"警告: metric '{metric.get('key', 'unknown')}' にrequiredが含まれていません")
+        response["metrics"] = metrics
     return response
 
 

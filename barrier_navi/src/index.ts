@@ -49,11 +49,13 @@ interface BodyMetricDefinition {
 }
 
 const BODY_METRICS: BodyMetricDefinition[] = [
+  // フラグ型（〇×で表せる項目）：設置されていれば1点
   { key: 'step_response_status', label: '段差への対応', required: 1, type: 'flag' },
   { key: 'has_guidance_system', label: '案内設備の設置の有無', required: 1, type: 'flag' },
   { key: 'has_accessible_restroom', label: '障害者対応型便所の設置の有無', required: 1, type: 'flag' },
   { key: 'has_accessible_gate', label: '障害者対応型改札口の設置の有無', required: 1, type: 'flag' },
   { key: 'has_fall_prevention', label: '転落防止のための設備の設置の有無', required: 1, type: 'flag' },
+  // 数値型（基準値以上であれば1点、未満なら0点）
   { key: 'num_platforms', label: 'プラットホームの数', required: 6, type: 'number' },
   { key: 'num_step_free_platforms', label: '段差が解消されているプラットホームの数', required: 6, type: 'number' },
   { key: 'num_elevators', label: 'エレベーターの設置基数', required: 4, type: 'number' },
