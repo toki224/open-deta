@@ -84,7 +84,6 @@ class LoginPage {
     const formData = new FormData(form);
     const username = formData.get('username') as string;
     const password = formData.get('password') as string;
-    const rememberMe = (formData.get('remember-me') as string) === 'on';
 
     const errorMessage = document.getElementById('error-message');
     if (errorMessage) {
@@ -100,9 +99,6 @@ class LoginPage {
         // ログイン成功
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('username', username);
-        if (rememberMe) {
-          localStorage.setItem('rememberMe', 'true');
-        }
         window.location.href = 'home.html';
       } else {
         // ログイン失敗
