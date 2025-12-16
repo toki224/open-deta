@@ -81,7 +81,11 @@ class LoginPage {
             if (response.success) {
                 // ログイン成功
                 localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('username', username);
+                const displayName = response.user?.username || username;
+                localStorage.setItem('username', displayName);
+                if (response.user?.id) {
+                    localStorage.setItem('userId', response.user.id.toString());
+                }
                 window.location.href = 'home.html';
             }
             else {
@@ -103,32 +107,22 @@ class LoginPage {
                 },
                 body: JSON.stringify({ username, password }),
             });
-            if (response.ok) {
-                const data = await response.json();
-                return { success: true };
+            const data = await response.json();
+            if (response.ok && data.success) {
+                return { success: true, user: data.data };
             }
             else {
-                const data = await response.json();
                 return { success: false, error: data.error || 'ログインに失敗しました' };
             }
         }
         catch (error) {
-            // APIが利用できない場合は、デモ用にローカルストレージでシミュレート
-            console.warn('API not available, using demo mode');
-            return this.demoLogin(username, password);
+            console.error('Login error:', error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+                return { success: false, error: 'APIサーバーに接続できません。サーバーが起動しているか確認してください。' };
+            }
+            return { success: false, error: 'ログイン処理中にエラーが発生しました' };
         }
-    }
-    demoLogin(username, password) {
-        // デモ用の簡易ログイン（実際の実装では削除）
-        const storedUsers = JSON.parse(localStorage.getItem('demoUsers') || '{}');
-        if (storedUsers[username] && storedUsers[username].password === password) {
-            return { success: true };
-        }
-        // デフォルトのテストユーザー
-        if (username === 'test' && password === 'test1234') {
-            return { success: true };
-        }
-        return { success: false, error: 'ユーザー名またはパスワードが正しくありません' };
     }
     handleGuestLogin() {
         localStorage.setItem('isGuest', 'true');
@@ -167,6 +161,10 @@ class LoginPage {
             errorMessage.textContent = '';
         }
         // バリデーション
+        if (!username || !email || !password || !passwordConfirm) {
+            this.showError(errorMessage, 'すべての項目を入力してください');
+            return;
+        }
         if (password !== passwordConfirm) {
             this.showError(errorMessage, 'パスワードが一致しません');
             return;
@@ -205,29 +203,33 @@ class LoginPage {
                 },
                 body: JSON.stringify({ username, email, password }),
             });
-            if (response.ok) {
+            // レスポンスがJSONでない場合の処理
+            let data;
+            try {
+                data = await response.json();
+            }
+            catch (e) {
+                const text = await response.text();
+                console.error('JSON parse error:', text);
+                return { success: false, error: `サーバーエラー: ${response.status} ${response.statusText}` };
+            }
+            if (response.ok && data.success) {
                 return { success: true };
             }
             else {
-                const data = await response.json();
-                return { success: false, error: data.error || 'アカウント作成に失敗しました' };
+                const errorMsg = data.error || data.message || 'アカウント作成に失敗しました';
+                console.error('Signup API error:', errorMsg);
+                return { success: false, error: errorMsg };
             }
         }
         catch (error) {
-            // APIが利用できない場合は、デモ用にローカルストレージでシミュレート
-            console.warn('API not available, using demo mode');
-            return this.demoSignup(username, email, password);
+            console.error('Signup network error:', error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+                return { success: false, error: 'APIサーバーに接続できません。サーバーが起動しているか確認してください。' };
+            }
+            return { success: false, error: `アカウント作成処理中にエラーが発生しました: ${errorMessage}` };
         }
-    }
-    demoSignup(username, email, password) {
-        // デモ用の簡易アカウント作成
-        const storedUsers = JSON.parse(localStorage.getItem('demoUsers') || '{}');
-        if (storedUsers[username]) {
-            return { success: false, error: 'このユーザー名は既に使用されています' };
-        }
-        storedUsers[username] = { email, password };
-        localStorage.setItem('demoUsers', JSON.stringify(storedUsers));
-        return { success: true };
     }
     showResetPasswordModal() {
         const modal = document.getElementById('reset-password-modal');
@@ -296,18 +298,21 @@ class LoginPage {
                 },
                 body: JSON.stringify({ email }),
             });
-            if (response.ok) {
+            const data = await response.json();
+            if (response.ok && data.success) {
                 return { success: true };
             }
             else {
-                const data = await response.json();
                 return { success: false, error: data.error || 'パスワードリセットに失敗しました' };
             }
         }
         catch (error) {
-            // APIが利用できない場合は、デモ用に成功を返す
-            console.warn('API not available, using demo mode');
-            return { success: true };
+            console.error('Password reset error:', error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+                return { success: false, error: 'APIサーバーに接続できません。サーバーが起動しているか確認してください。' };
+            }
+            return { success: false, error: 'パスワードリセット処理中にエラーが発生しました' };
         }
     }
     showError(element, message) {

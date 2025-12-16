@@ -7,6 +7,7 @@ declare class HomePage {
     private checkAuthStatus;
     private setupEventListeners;
     private showProfileMenu;
+    private handleProfile;
     private handleLogout;
     private escapeHtml;
 }

@@ -36,6 +36,15 @@ class HomePage {
           ${isGuest ? '<p class="profile-menu-guest">ゲストモード</p>' : ''}
         </div>
         <div class="profile-menu-divider"></div>
+        ${!isGuest ? `
+        <button class="profile-menu-item" id="profile-menu-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <span>プロフィール</span>
+        </button>
+        ` : ''}
         <button class="profile-menu-item" id="logout-btn">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -52,6 +61,14 @@ class HomePage {
             existingMenu.remove();
         }
         document.body.appendChild(menu);
+        // プロフィールボタンのイベント（ゲストでない場合のみ）
+        if (!isGuest) {
+            const profileMenuBtn = document.getElementById('profile-menu-btn');
+            profileMenuBtn?.addEventListener('click', () => {
+                this.handleProfile();
+                menu.remove();
+            });
+        }
         // ログアウトボタンのイベント
         const logoutBtn = document.getElementById('logout-btn');
         logoutBtn?.addEventListener('click', () => {
@@ -72,12 +89,19 @@ class HomePage {
         };
         document.addEventListener('keydown', closeMenu);
     }
+    handleProfile() {
+        // プロフィール画面への遷移（未実装の場合はアラート）
+        alert('プロフィール画面は準備中です');
+        // 実装時は以下のように変更
+        // window.location.href = 'profile.html';
+    }
     handleLogout() {
         if (confirm('ログアウトしますか？')) {
             localStorage.removeItem('isLoggedIn');
             localStorage.removeItem('isGuest');
             localStorage.removeItem('username');
             localStorage.removeItem('rememberMe');
+            localStorage.removeItem('userId');
             window.location.href = 'login.html';
         }
     }

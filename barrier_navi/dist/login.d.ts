@@ -9,13 +9,11 @@ declare class LoginPage {
     private setupEventListeners;
     private handleLogin;
     private loginUser;
-    private demoLogin;
     private handleGuestLogin;
     private showSignupModal;
     private hideSignupModal;
     private handleSignup;
     private createUser;
-    private demoSignup;
     private showResetPasswordModal;
     private hideResetPasswordModal;
     private handlePasswordReset;
