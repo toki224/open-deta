@@ -361,6 +361,7 @@ def get_body_accessible_stations():
     try:
         keyword = request.args.get('keyword', default='', type=str).strip()
         prefecture = request.args.get('prefecture', default=None, type=str)
+        line_name = request.args.get('line_name', default=None, type=str)
         limit = request.args.get('limit', default=20, type=int)
         offset = request.args.get('offset', default=0, type=int)
         weights_param = request.args.get('weights', default=None, type=str)
@@ -387,6 +388,13 @@ def get_body_accessible_stations():
         if prefecture:
             where_clause += " AND prefecture = %s"
             params.append(prefecture)
+        if line_name:
+            search_line = line_name.replace('線', '')
+
+            if search_line.endswith('新幹'):
+                 pass
+            where_clause += " AND line_name LIKE %s"
+            params.append(f"%{line_name}%")
 
         for filter_key in filter_list:
             if filter_key in BODY_METRIC_DEFINITIONS:
@@ -455,6 +463,38 @@ def get_body_accessible_station_detail(station_id: int):
         return jsonify({
             "success": True,
             "data": detail
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+    
+@app.route('/api/lines', methods=['GET'])
+def get_lines():
+    """路線名一覧を取得（プルダウン用）"""
+    try:
+        db = DatabaseConnection(**MYSQL_CONFIG)
+
+        rows = db.execute_query(
+            "SELECT DISTINCT line_name FROM stations WHERE line_name IS NOT NULL AND line_name != ''"
+            )
+        db.close()
+        
+        lines_set = set()
+        for row in rows:
+            line_val = row['line_name']
+            if line_val:
+                split_lines = line_val.split('・')
+                for line in split_lines:
+                    clean_line = line.strip()
+                    if clean_line:
+                        lines_set.add(clean_line)
+        
+        # 五十音順などでソートして返す
+        return jsonify({
+            "success": True,
+            "data": sorted(list(lines_set))
         })
     except Exception as e:
         return jsonify({

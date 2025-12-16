@@ -90,6 +90,7 @@ class StationApp {
     this.renderFilterControls();
     this.setupEventListeners();
     await this.loadPrefectures();
+    await this.fetchLines();
     await this.loadStations();
   }
 
@@ -137,6 +138,8 @@ class StationApp {
 
     const filterButton = document.getElementById('apply-filter-btn') as HTMLButtonElement | null;
     const resetButton = document.getElementById('reset-filter-btn') as HTMLButtonElement | null;
+
+    const lineSelect = document.getElementById('line-select') as HTMLSelectElement | null;
 
     searchButton?.addEventListener('click', () => this.applySearch());
     searchInput?.addEventListener('keypress', (event) => {
@@ -191,6 +194,11 @@ class StationApp {
     resetButton?.addEventListener('click', () => {
       this.resetFilters();
     });
+
+    lineSelect?.addEventListener('change', () => {
+      this.currentPage = 1;
+      this.loadStations();
+    });
   }
 
   private applySearch(): void {
@@ -229,9 +237,15 @@ class StationApp {
       this.sortOrder = 'none';
     }
 
+    const lineSelect = document.getElementById('line-select') as HTMLSelectElement | null;
+    if (lineSelect) {
+      lineSelect.value = '';
+    }
+
     // ページをリセットして再読み込み
     this.currentPage = 1;
     this.loadStations();
+
   }
 
   private collectFilters(): string[] {
@@ -285,6 +299,15 @@ class StationApp {
 
     if (this.selectedPrefecture) params.append('prefecture', this.selectedPrefecture);
     if (this.keyword) params.append('keyword', this.keyword);
+    if (this.selectedFilters.length > 0) {
+      params.append('filters', JSON.stringify(this.selectedFilters));
+    }
+
+    const lineSelect = document.getElementById('line-select') as HTMLSelectElement | null;
+    if (lineSelect && lineSelect.value) {
+        params.append('line_name', lineSelect.value);
+    }
+
     if (this.selectedFilters.length > 0) {
       params.append('filters', JSON.stringify(this.selectedFilters));
     }
@@ -488,6 +511,31 @@ class StationApp {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  private async fetchLines(): Promise<void> {
+      const lineSelect = document.getElementById('line-select') as HTMLSelectElement;
+      if (!lineSelect) return;
+
+      try {
+          const res = await fetch('http://localhost:5000/api/lines');
+          const json = await res.json();
+
+          if (json.success) {
+              
+              lineSelect.innerHTML = '<option value="">指定なし</option>';
+
+              
+              json.data.forEach((line: string) => {
+                  const option = document.createElement('option');
+                  option.value = line;
+                  option.textContent = line;
+                  lineSelect.appendChild(option);
+              });
+          }
+      } catch (error) {
+          console.error('Failed to fetch lines:', error);
+      }
   }
 }
 
