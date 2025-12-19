@@ -68,6 +68,13 @@ const BODY_METRICS: BodyMetricDefinition[] = [
   { key: 'num_wheelchair_accessible_platforms', label: '車いす使用者の円滑な乗降が可能なプラットホームの数', required: 6, type: 'number' }
 ];
 
+const HEARING_METRICS: BodyMetricDefinition[] = [
+  // フラグ型（〇×で表せる項目）：設置されていれば1点
+  { key: 'has_guidance_system', label: '案内設備の設置の有無', required: 1, type: 'flag' },
+  { key: 'has_accessible_restroom', label: '障害者対応型便所の設置の有無', required: 1, type: 'flag' },
+  { key: 'has_accessible_gate', label: '障害者対応型改札口の設置の有無', required: 1, type: 'flag' },
+  { key: 'has_fall_prevention', label: '転落防止のための設備の設置の有無', required: 1, type: 'flag' }
+];
 
 class StationApp {
   private apiBaseUrl = 'http://localhost:5000/api';
@@ -79,8 +86,17 @@ class StationApp {
   private totalCount = 0; // ★追加：全件数を保存
   private selectedFilters: string[] = [];
   private sortOrder: 'none' | 'score-asc' | 'score-desc' = 'none';
+  private currentMetrics: BodyMetricDefinition[];
 
   constructor() {
+    const mode = document.body.dataset.modo;
+
+    if (mode === 'hearing') {
+      this.currentMetrics = HEARING_METRICS;
+    } else {
+      this.currentMetrics = BODY_METRICS;
+    }
+
     this.init();
   }
 
@@ -97,7 +113,7 @@ class StationApp {
     if (!container) return;
     container.innerHTML = '';
 
-    BODY_METRICS.forEach((metric) => {
+    this.currentMetrics.forEach((metric) => {
       const item = document.createElement('div');
       item.className = 'filter-item';
 
@@ -393,7 +409,7 @@ class StationApp {
       const chipsContainer = section.querySelector('.filter-chips');
       
       this.selectedFilters.forEach((filterKey) => {
-        const metric = BODY_METRICS.find(m => m.key === filterKey);
+        const metric = this.currentMetrics.find(m => m.key === filterKey);
         if (!metric) return;
 
         const chip = document.createElement('div');

@@ -42,6 +42,7 @@ interface BodyMetricDefinition {
     type: 'flag' | 'number';
 }
 declare const BODY_METRICS: BodyMetricDefinition[];
+declare const HEARING_METRICS: BodyMetricDefinition[];
 declare class StationApp {
     private apiBaseUrl;
     private currentPage;
@@ -52,6 +53,7 @@ declare class StationApp {
     private totalCount;
     private selectedFilters;
     private sortOrder;
+    private currentMetrics;
     constructor();
     private init;
     private renderFilterControls;
