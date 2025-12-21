@@ -424,6 +424,7 @@ class StationApp {
     navigateToDetail(stationId) {
         const url = new URL('detail.html', window.location.href);
         url.searchParams.set('stationId', stationId.toString());
+        url.searchParams.set('mode', this.currentMode);
         window.location.href = url.toString();
     }
     escapeHtml(text) {

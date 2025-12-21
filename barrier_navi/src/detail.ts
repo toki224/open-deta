@@ -1,3 +1,4 @@
+// 型定義はそのまま使います
 interface DetailApiResponse<T> {
   success: boolean;
   data?: T;
@@ -40,11 +41,25 @@ class DetailPage {
   private metaEl: HTMLElement | null = null;
   private tableBodyEl: HTMLElement | null = null;
 
+  // ★追加: 現在のモード
+  private currentMode: 'body' | 'hearing' = 'body';
+
   constructor() {
     this.titleEl = document.getElementById('detail-title');
     this.scoreEl = document.getElementById('detail-score');
     this.metaEl = document.getElementById('detail-meta');
     this.tableBodyEl = document.getElementById('detail-table-body');
+
+    // ★追加: モード判定
+    const params = new URLSearchParams(window.location.search);
+    const urlMode = params.get('mode');
+    const bodyMode = document.body.dataset.mode;
+    if (urlMode === 'hearing' || bodyMode === 'hearing') {
+        this.currentMode = 'hearing';
+    } else {
+        this.currentMode = 'body';
+    }
+
     this.load();
   }
 
@@ -56,7 +71,12 @@ class DetailPage {
       return;
     }
 
-    const response = await this.fetchApi<DetailStation>(`/body/stations/${stationId}`);
+    // ★修正: モードに応じてAPIパスを切り替える
+    const apiPath = this.currentMode === 'hearing' ? '/hearing/stations' : '/body/stations';
+    
+    // 修正後:
+    const response = await this.fetchApi<DetailStation>(`${apiPath}/${stationId}`);
+    
     if (response.success && response.data) {
       this.renderDetail(response.data);
     } else {
@@ -84,27 +104,16 @@ class DetailPage {
       <p>所在地: ${this.escape(detail.prefecture)}${this.escape(city)}</p>
     `;
 
-    // デバッグ用：APIレスポンス全体を確認
-    console.log('Detail data:', detail);
-    console.log('Metrics:', detail.metrics);
-    
     const rows = detail.metrics.map((metric) => {
-      // 値の表示
       let valueDisplay = '';
       let requiredDisplay = '';
       
-      // デバッグ用：各metricオブジェクトを確認
-      console.log('Metric:', metric, 'required:', metric.required);
-      
       if (metric.type === 'number') {
-        // 数値型：実際の値を表示
         const rawValue = typeof metric.raw_value === 'number' ? metric.raw_value : (metric.value !== null && typeof metric.value === 'number' ? metric.value : 0);
         valueDisplay = `${rawValue}`;
-        // requiredが存在するかチェック（APIレスポンスに含まれているか確認）
         const required = (metric.required !== undefined && metric.required !== null) ? metric.required : '不明';
         requiredDisplay = `${required}以上`;
       } else {
-        // フラグ型：○/×を表示
         valueDisplay = String(metric.value ?? '-');
         requiredDisplay = '設置あり';
       }
@@ -134,4 +143,3 @@ class DetailPage {
 }
 
 document.addEventListener('DOMContentLoaded', () => new DetailPage());
-

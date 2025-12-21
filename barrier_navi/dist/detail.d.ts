@@ -35,6 +35,7 @@ declare class DetailPage {
     private scoreEl;
     private metaEl;
     private tableBodyEl;
+    private currentMode;
     constructor();
     private load;
     private fetchApi;
