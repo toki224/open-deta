@@ -53,6 +53,7 @@ declare class StationApp {
     private totalCount;
     private selectedFilters;
     private sortOrder;
+    private currentMode;
     private currentMetrics;
     constructor();
     private init;

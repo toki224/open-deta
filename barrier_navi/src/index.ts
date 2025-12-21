@@ -86,14 +86,17 @@ class StationApp {
   private totalCount = 0; // ★追加：全件数を保存
   private selectedFilters: string[] = [];
   private sortOrder: 'none' | 'score-asc' | 'score-desc' = 'none';
+  private currentMode: 'body' | 'hearing' = 'body';
   private currentMetrics: BodyMetricDefinition[];
 
   constructor() {
-    const mode = document.body.dataset.modo;
+    const mode = document.body.dataset.mode;
 
     if (mode === 'hearing') {
+      this.currentMode = 'hearing';
       this.currentMetrics = HEARING_METRICS;
     } else {
+      this.currentMode = 'body';
       this.currentMetrics = BODY_METRICS;
     }
 
@@ -313,6 +316,7 @@ class StationApp {
 
     if (this.selectedPrefecture) params.append('prefecture', this.selectedPrefecture);
     if (this.keyword) params.append('keyword', this.keyword);
+
     if (this.selectedFilters.length > 0) {
       params.append('filters', JSON.stringify(this.selectedFilters));
     }
@@ -322,11 +326,9 @@ class StationApp {
         params.append('line_name', lineSelect.value);
     }
 
-    if (this.selectedFilters.length > 0) {
-      params.append('filters', JSON.stringify(this.selectedFilters));
-    }
+    const apiPath = this.currentMode === 'hearing' ? '/hearing/stations' : '/body/stations';
 
-    const response = await this.fetchApi<BodyStationSummary[]>(`/body/stations?${params.toString()}`);
+    const response = await this.fetchApi<BodyStationSummary[]>(`${apiPath}?${params.toString()}`);
 
     if (loadingIndicator) loadingIndicator.style.display = 'none';
 

@@ -39,11 +39,14 @@ class StationApp {
         this.totalCount = 0; // ★追加：全件数を保存
         this.selectedFilters = [];
         this.sortOrder = 'none';
-        const mode = document.body.dataset.modo;
+        this.currentMode = 'body';
+        const mode = document.body.dataset.mode;
         if (mode === 'hearing') {
+            this.currentMode = 'hearing';
             this.currentMetrics = HEARING_METRICS;
         }
         else {
+            this.currentMode = 'body';
             this.currentMetrics = BODY_METRICS;
         }
         this.init();
@@ -242,10 +245,8 @@ class StationApp {
         if (lineSelect && lineSelect.value) {
             params.append('line_name', lineSelect.value);
         }
-        if (this.selectedFilters.length > 0) {
-            params.append('filters', JSON.stringify(this.selectedFilters));
-        }
-        const response = await this.fetchApi(`/body/stations?${params.toString()}`);
+        const apiPath = this.currentMode === 'hearing' ? '/hearing/stations' : '/body/stations';
+        const response = await this.fetchApi(`${apiPath}?${params.toString()}`);
         if (loadingIndicator)
             loadingIndicator.style.display = 'none';
         if (response.success && response.data) {
