@@ -71,6 +71,14 @@ BODY_METRIC_DEFINITIONS: Dict[str, Dict[str, Any]] = {
     "num_wheelchair_accessible_platforms": {"label": "車いす使用者の円滑な乗降が可能なプラットホームの数", "type": "number", "required": 6},
 }
 
+HEARING_METRIC_DEFINITIONS: Dict[str, Dict[str, Any]] = {
+    # フラグ型（〇×で表せる項目）：設置されていれば1点
+    "has_guidance_system": {"label": "案内設備の設置の有無", "type": "flag", "required": 1},
+    "has_accessible_restroom": {"label": "障害者対応型便所の設置の有無", "type": "flag", "required": 1},
+    "has_accessible_gate": {"label": "障害者対応型改札口の設置の有無", "type": "flag", "required": 1},
+    "has_fall_prevention": {"label": "転落防止のための設備の設置の有無", "type": "flag", "required": 1},
+}
+
 BODY_BASE_COLUMNS = [
     "id",
     "station_name",
@@ -103,12 +111,12 @@ def evaluate_metric(value: Any, definition: Dict[str, Any]) -> Dict[str, Any]:
     return result
 
 
-def compute_body_score(row: Dict[str, Any], include_details: bool = False) -> Dict[str, Any]:
-    """身体障害向けスコアを計算（重み付けなし、単純に達成項目数をカウント）"""
+def compute_score(row: Dict[str, Any], definitions: Dict[str, Any], include_details: bool = False) -> Dict[str, Any]:
+    """指定された基準(definitions)に基づいてスコアを計算"""
     met_items = 0
     details: List[Dict[str, Any]] = []
 
-    for field, definition in BODY_METRIC_DEFINITIONS.items():
+    for field, definition in definitions.items():
         metric_result = evaluate_metric(row.get(field), definition)
         if metric_result["met"]:
             met_items += 1
@@ -125,7 +133,7 @@ def compute_body_score(row: Dict[str, Any], include_details: bool = False) -> Di
                 "required": definition["required"]
             })
 
-    total_items = len(BODY_METRIC_DEFINITIONS)
+    total_items = len(definitions)
     percentage = (met_items / total_items) * 100 if total_items > 0 else 0
     
     return {
@@ -136,8 +144,13 @@ def compute_body_score(row: Dict[str, Any], include_details: bool = False) -> Di
     }
 
 
-def build_body_station_response(row: Dict[str, Any], include_details: bool = False) -> Dict[str, Any]:
-    score = compute_body_score(row, include_details=include_details)
+def build_station_response(row: Dict[str, Any], mode: str = 'body', include_details: bool = False) -> Dict[str, Any]:
+    """レスポンス用データの構築（モードで切り替え）"""
+    # モードに応じて評価基準を切り替える
+    definitions = HEARING_METRIC_DEFINITIONS if mode == 'hearing' else BODY_METRIC_DEFINITIONS
+    
+    score = compute_score(row, definitions, include_details=include_details)
+    
     response = {
         "station_id": row.get("id"),
         "station_name": row.get("station_name"),
@@ -153,14 +166,99 @@ def build_body_station_response(row: Dict[str, Any], include_details: bool = Fal
         }
     }
     if include_details:
-        # metricsにrequiredを含める（デバッグ用：各metricにrequiredが含まれているか確認）
-        metrics = score["details"]
-        # 念のため、各metricにrequiredが含まれているか確認してログ出力
-        for metric in metrics:
-            if "required" not in metric:
-                print(f"警告: metric '{metric.get('key', 'unknown')}' にrequiredが含まれていません")
-        response["metrics"] = metrics
+        response["metrics"] = score["details"]
     return response
+
+# ---------------------------------------------------------
+# ★これを新しく追加してください（共通の検索・取得ロジック）
+# ---------------------------------------------------------
+def get_stations_with_score(mode: str):
+    try:
+        # モードに応じた定義を選択
+        definitions = HEARING_METRIC_DEFINITIONS if mode == 'hearing' else BODY_METRIC_DEFINITIONS
+        
+        keyword = request.args.get('keyword', default='', type=str).strip()
+        prefecture = request.args.get('prefecture', default=None, type=str)
+        line_name = request.args.get('line_name', default=None, type=str)
+        limit = request.args.get('limit', default=20, type=int)
+        offset = request.args.get('offset', default=0, type=int)
+        filters_param = request.args.get('filters', default=None, type=str)
+
+        filter_list = []
+        if filters_param:
+            try:
+                filter_list = json.loads(filters_param)
+                if not isinstance(filter_list, list):
+                    filter_list = []
+            except json.JSONDecodeError:
+                filter_list = []
+
+        where_clause = "FROM stations WHERE 1=1"
+        params: List[Any] = []
+
+        if keyword:
+            where_clause += " AND station_name LIKE %s"
+            params.append(f"%{keyword}%")
+        if prefecture:
+            where_clause += " AND prefecture = %s"
+            params.append(prefecture)
+        if line_name:
+            search_line = line_name.replace('線', '')
+            if search_line.endswith('新幹'):
+                 pass 
+            where_clause += " AND line_name LIKE %s"
+            params.append(f"%{search_line}%")
+
+        # 定義に基づいてフィルタリング
+        for filter_key in filter_list:
+            if filter_key in definitions:
+                metric_def = definitions[filter_key]
+                if metric_def["type"] == "flag":
+                    where_clause += f" AND {filter_key} = %s"
+                    params.append(1)
+                else:
+                    where_clause += f" AND {filter_key} > %s"
+                    params.append(0)
+
+        db = DatabaseConnection(**MYSQL_CONFIG)
+
+        count_query = f"SELECT COUNT(*) as total {where_clause}"
+        count_result = db.execute_query(count_query, tuple(params))
+        total_count = count_result[0]['total'] if count_result else 0
+
+        columns = ", ".join(BODY_QUERY_COLUMNS)
+        query = f"SELECT {columns} {where_clause} ORDER BY station_name LIMIT %s OFFSET %s"
+        data_params = params + [limit, offset]
+        rows = db.execute_query(query, tuple(data_params))
+        db.close()
+
+        # ここで mode を渡してレスポンスを作る
+        data = [build_station_response(row, mode=mode, include_details=False) for row in rows]
+
+        return jsonify({
+            "success": True,
+            "data": data,
+            "count": len(data),
+            "total_count": total_count
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+def get_station_detail_with_score(station_id: int, mode: str):
+    try:
+        columns = ", ".join(BODY_QUERY_COLUMNS)
+        query = f"SELECT {columns} FROM stations WHERE id = %s"
+        db = DatabaseConnection(**MYSQL_CONFIG)
+        rows = db.execute_query(query, (station_id,))
+        db.close()
+
+        if not rows:
+            return jsonify({"success": False, "error": "Station not found"}), 404
+
+        detail = build_station_response(rows[0], mode=mode, include_details=True)
+        return jsonify({"success": True, "data": detail})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @app.route('/api/stations', methods=['GET'])
@@ -396,7 +494,7 @@ def get_body_accessible_stations():
         
         db.close()
 
-        data = [build_body_station_response(row, include_details=False) for row in rows]
+        data = [build_station_response(row, include_details=False) for row in rows]
 
         return jsonify({
             "success": True,
@@ -428,7 +526,7 @@ def get_body_accessible_station_detail(station_id: int):
                 "error": "Station not found"
             }), 404
 
-        detail = build_body_station_response(rows[0], include_details=True)
+        detail = build_station_response(rows[0], include_details=True)
 
         return jsonify({
             "success": True,
@@ -439,7 +537,17 @@ def get_body_accessible_station_detail(station_id: int):
             "success": False,
             "error": str(e)
         }), 500
-    
+
+@app.route('/api/hearing/stations', methods=['GET'])
+def get_hearing_stations():
+    # mode='hearing' を指定して呼び出す
+    return get_stations_with_score(mode='hearing')
+
+@app.route('/api/hearing/stations/<int:station_id>', methods=['GET'])
+def get_hearing_detail(station_id):
+    # 詳細用
+    return get_station_detail_with_score(station_id, mode='hearing')
+
 @app.route('/api/lines', methods=['GET'])
 def get_lines():
     """路線名一覧を取得（プルダウン用）"""
