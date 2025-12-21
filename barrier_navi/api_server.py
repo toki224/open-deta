@@ -429,123 +429,19 @@ def search_stations():
 
 
 @app.route('/api/body/stations', methods=['GET'])
-def get_body_accessible_stations():
-    """身体障害者向けスコア付きの駅一覧（修正版：全件数取得付き）"""
-    try:
-        keyword = request.args.get('keyword', default='', type=str).strip()
-        prefecture = request.args.get('prefecture', default=None, type=str)
-        line_name = request.args.get('line_name', default=None, type=str)
-        limit = request.args.get('limit', default=20, type=int)
-        offset = request.args.get('offset', default=0, type=int)
-        filters_param = request.args.get('filters', default=None, type=str)
-
-        # フィルタリストを取得
-        filter_list = []
-        if filters_param:
-            try:
-                filter_list = json.loads(filters_param)
-                if not isinstance(filter_list, list):
-                    filter_list = []
-            except json.JSONDecodeError:
-                filter_list = []
-
-        # --- クエリ構築の共通部分 ---
-        where_clause = "FROM stations WHERE 1=1"
-        params: List[Any] = []
-
-        if keyword:
-            where_clause += " AND station_name LIKE %s"
-            params.append(f"%{keyword}%")
-        if prefecture:
-            where_clause += " AND prefecture = %s"
-            params.append(prefecture)
-        if line_name:
-            search_line = line_name.replace('線', '')
-
-            if search_line.endswith('新幹'):
-                 pass
-            where_clause += " AND line_name LIKE %s"
-            params.append(f"%{line_name}%")
-
-        for filter_key in filter_list:
-            if filter_key in BODY_METRIC_DEFINITIONS:
-                metric_def = BODY_METRIC_DEFINITIONS[filter_key]
-                if metric_def["type"] == "flag":
-                    where_clause += f" AND {filter_key} = %s"
-                    params.append(1)
-                else:
-                    where_clause += f" AND {filter_key} > %s"
-                    params.append(0)
-        # ---------------------------
-
-        db = DatabaseConnection(**MYSQL_CONFIG)
-
-        # 1. 全件数を取得（ページネーション計算用）
-        count_query = f"SELECT COUNT(*) as total {where_clause}"
-        count_result = db.execute_query(count_query, tuple(params))
-        total_count = count_result[0]['total'] if count_result else 0
-
-        # 2. データ本体を取得
-        columns = ", ".join(BODY_QUERY_COLUMNS)
-        query = f"SELECT {columns} {where_clause} ORDER BY station_name LIMIT %s OFFSET %s"
-        # LIMITとOFFSETをパラメータに追加
-        data_params = params + [limit, offset]
-        rows = db.execute_query(query, tuple(data_params))
-        
-        db.close()
-
-        data = [build_station_response(row, include_details=False) for row in rows]
-
-        return jsonify({
-            "success": True,
-            "data": data,
-            "count": len(data),       # 取得したデータ数
-            "total_count": total_count # ★追加：全件数
-        })
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
-
-
+def get_body_stations():
+    return get_stations_with_score(mode='body')
+    
 @app.route('/api/body/stations/<int:station_id>', methods=['GET'])
-def get_body_accessible_station_detail(station_id: int):
-    """身体障害者向けスコアの詳細"""
-    try:
-        columns = ", ".join(BODY_QUERY_COLUMNS)
-        query = f"SELECT {columns} FROM stations WHERE id = %s"
-
-        db = DatabaseConnection(**MYSQL_CONFIG)
-        rows = db.execute_query(query, (station_id,))
-        db.close()
-
-        if not rows:
-            return jsonify({
-                "success": False,
-                "error": "Station not found"
-            }), 404
-
-        detail = build_station_response(rows[0], include_details=True)
-
-        return jsonify({
-            "success": True,
-            "data": detail
-        })
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
+def get_body_detail(station_id: int):
+    return get_station_detail_with_score(station_id, mode='body')
 
 @app.route('/api/hearing/stations', methods=['GET'])
 def get_hearing_stations():
-    # mode='hearing' を指定して呼び出す
     return get_stations_with_score(mode='hearing')
 
 @app.route('/api/hearing/stations/<int:station_id>', methods=['GET'])
 def get_hearing_detail(station_id):
-    # 詳細用
     return get_station_detail_with_score(station_id, mode='hearing')
 
 @app.route('/api/lines', methods=['GET'])
