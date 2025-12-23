@@ -79,6 +79,21 @@ HEARING_METRIC_DEFINITIONS: Dict[str, Dict[str, Any]] = {
     "has_fall_prevention": {"label": "転落防止のための設備の設置の有無", "type": "flag", "required": 1},
 }
 
+VISION_METRIC_DEFINITIONS: Dict[str, Dict[str, Any]] = {
+    # フラグ型（〇×で表せる項目）：設置されていれば1点
+    "step_response_status": {"label": "段差への対応", "type": "flag", "required": 1},
+    "has_tactile_paving": {"label": "視覚障害者誘導用ブロックの設置の有無", "type": "flag", "required": 1},
+    "has_guidance_system": {"label": "案内設備の設置の有無", "type": "flag", "required": 1},
+    "has_accessible_restroom": {"label": "障害者対応型便所の設置の有無", "type": "flag", "required": 1},
+    "has_accessible_gate": {"label": "障害者対応型改札口の設置の有無", "type": "flag", "required": 1},
+    "has_fall_prevention": {"label": "転落防止のための設備の設置の有無", "type": "flag", "required": 1},
+    # 数値型（基準値以上であれば1点、未満なら0点）
+    "num_platforms": {"label": "プラットホームの数", "type": "number", "required": 6},
+    "num_step_free_platforms": {"label": "段差が解消されているプラットホームの数", "type": "number", "required": 6},
+    "num_compliant_elevators": {"label": "移動等円滑化基準に適合しているエレベーターの設置基数", "type": "number", "required": 4},
+    "num_compliant_escalators": {"label": "移動等円滑化基準に適合しているエスカレーターの設置基数", "type": "number", "required": 4},
+    "num_compliant_slopes": {"label": "移動等円滑化基準に適合している傾斜路の設置箇所数", "type": "number", "required": 2},
+}
 BODY_BASE_COLUMNS = [
     "id",
     "station_name",
@@ -147,7 +162,7 @@ def compute_score(row: Dict[str, Any], definitions: Dict[str, Any], include_deta
 def build_station_response(row: Dict[str, Any], mode: str = 'body', include_details: bool = False) -> Dict[str, Any]:
     """レスポンス用データの構築（モードで切り替え）"""
     # モードに応じて評価基準を切り替える
-    definitions = HEARING_METRIC_DEFINITIONS if mode == 'hearing' else BODY_METRIC_DEFINITIONS
+    definitions = HEARING_METRIC_DEFINITIONS if mode == 'hearing' else VISION_METRIC_DEFINITIONS if mode == 'vision' else BODY_METRIC_DEFINITIONS
     
     score = compute_score(row, definitions, include_details=include_details)
     
@@ -175,7 +190,7 @@ def build_station_response(row: Dict[str, Any], mode: str = 'body', include_deta
 def get_stations_with_score(mode: str):
     try:
         # モードに応じた定義を選択
-        definitions = HEARING_METRIC_DEFINITIONS if mode == 'hearing' else BODY_METRIC_DEFINITIONS
+        definitions = HEARING_METRIC_DEFINITIONS if mode == 'hearing' else VISION_METRIC_DEFINITIONS if mode == 'vision' else BODY_METRIC_DEFINITIONS
         
         keyword = request.args.get('keyword', default='', type=str).strip()
         prefecture = request.args.get('prefecture', default=None, type=str)
@@ -443,6 +458,14 @@ def get_hearing_stations():
 @app.route('/api/hearing/stations/<int:station_id>', methods=['GET'])
 def get_hearing_detail(station_id):
     return get_station_detail_with_score(station_id, mode='hearing')
+
+@app.route('/api/vision/stations', methods=['GET'])
+def get_vision_stations():
+    return get_stations_with_score(mode='vision')
+
+@app.route('/api/vision/stations/<int:station_id>', methods=['GET'])
+def get_vision_detail(station_id):
+    return get_station_detail_with_score(station_id, mode='vision')
 
 @app.route('/api/lines', methods=['GET'])
 def get_lines():
