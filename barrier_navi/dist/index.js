@@ -251,7 +251,8 @@ class StationApp {
         this.selectedFilters = this.collectFilters();
         const params = new URLSearchParams({
             limit: this.pageSize.toString(),
-            offset: ((this.currentPage - 1) * this.pageSize).toString()
+            offset: ((this.currentPage - 1) * this.pageSize).toString(),
+            sort: this.sortOrder
         });
         if (this.selectedPrefecture)
             params.append('prefecture', this.selectedPrefecture);
@@ -268,18 +269,29 @@ class StationApp {
         const response = await this.fetchApi(`${apiPath}?${params.toString()}`);
         if (loadingIndicator)
             loadingIndicator.style.display = 'none';
+        // sortロジック変更前の表示部分
+        // if (response.success && response.data) {
+        //   let sortedData = [...response.data];
+        //   // ソートを適用
+        //   if (this.sortOrder === 'score-asc') {
+        //     sortedData.sort((a, b) => a.score.percentage - b.score.percentage);
+        //   } else if (this.sortOrder === 'score-desc') {
+        //     sortedData.sort((a, b) => b.score.percentage - a.score.percentage);
+        //   }
+        //   this.lastResultCount = sortedData.length;
+        //   this.totalCount = response.total_count || 0; // ★追加: 全件数を保存
+        //   this.renderStationCards(sortedData);
+        //   this.updatePagination();
+        //   this.updateActiveFilters();
+        // } else if (stationsContainer) {
+        //   stationsContainer.innerHTML = `<p class="error">データの取得に失敗しました: ${response.error}</p>`;
+        // }
+        // sortロジック変更後の表示部分
         if (response.success && response.data) {
-            let sortedData = [...response.data];
-            // ソートを適用
-            if (this.sortOrder === 'score-asc') {
-                sortedData.sort((a, b) => a.score.percentage - b.score.percentage);
-            }
-            else if (this.sortOrder === 'score-desc') {
-                sortedData.sort((a, b) => b.score.percentage - a.score.percentage);
-            }
-            this.lastResultCount = sortedData.length;
-            this.totalCount = response.total_count || 0; // ★追加: 全件数を保存
-            this.renderStationCards(sortedData);
+            const stationData = response.data;
+            this.lastResultCount = stationData.length;
+            this.totalCount = response.total_count || 0;
+            this.renderStationCards(stationData);
             this.updatePagination();
             this.updateActiveFilters();
         }

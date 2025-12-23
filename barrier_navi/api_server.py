@@ -198,6 +198,7 @@ def get_stations_with_score(mode: str):
         limit = request.args.get('limit', default=20, type=int)
         offset = request.args.get('offset', default=0, type=int)
         filters_param = request.args.get('filters', default=None, type=str)
+        sort_order = request.args.get('sort', default='none', type=str)
 
         filter_list = []
         if filters_param:
@@ -237,27 +238,48 @@ def get_stations_with_score(mode: str):
 
         db = DatabaseConnection(**MYSQL_CONFIG)
 
-        count_query = f"SELECT COUNT(*) as total {where_clause}"
-        count_result = db.execute_query(count_query, tuple(params))
-        total_count = count_result[0]['total'] if count_result else 0
+        # ソート処理変更前（ページごとにDBから取得）
+        # count_query = f"SELECT COUNT(*) as total {where_clause}"
+        # count_result = db.execute_query(count_query, tuple(params))
+        # total_count = count_result[0]['total'] if count_result else 0
 
+        # columns = ", ".join(BODY_QUERY_COLUMNS)
+        # query = f"SELECT {columns} {where_clause} ORDER BY station_name LIMIT %s OFFSET %s"
+        # data_params = params + [limit, offset]
+        # rows = db.execute_query(query, tuple(data_params))
+        # db.close()
+        # ここで mode を渡してレスポンスを作る
+        # data = [build_station_response(row, mode=mode, include_details=False) for row in rows]
+
+
+        # ソート処理変更後（全件取得してアプリ側でソート・ページング）
         columns = ", ".join(BODY_QUERY_COLUMNS)
-        query = f"SELECT {columns} {where_clause} ORDER BY station_name LIMIT %s OFFSET %s"
-        data_params = params + [limit, offset]
-        rows = db.execute_query(query, tuple(data_params))
+        query = f"SELECT {columns} {where_clause} ORDER BY station_name"
+
+        rows = db.execute_query(query, tuple(params))
         db.close()
 
-        # ここで mode を渡してレスポンスを作る
-        data = [build_station_response(row, mode=mode, include_details=False) for row in rows]
+        all_data = [build_station_response(row, mode=mode, include_details=False) for row in rows]
+        total_count = len(all_data)
+
+        if sort_order == 'score-asc':
+            all_data.sort(key=lambda x: x['score']['percentage'])
+        elif sort_order == 'score-desc':
+            all_data.sort(key=lambda x: x['score']['percentage'], reverse=True)
+
+        start = offset
+        end = offset + limit
+        paged_data = all_data[start:end]
 
         return jsonify({
             "success": True,
-            "data": data,
-            "count": len(data),
+            "data": paged_data,
+            "count": len(paged_data),
             "total_count": total_count
         })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
 
 def get_station_detail_with_score(station_id: int, mode: str):
     try:
