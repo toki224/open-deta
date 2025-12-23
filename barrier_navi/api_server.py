@@ -85,9 +85,9 @@ VISION_METRIC_DEFINITIONS: Dict[str, Dict[str, Any]] = {
     "has_accessible_restroom": {"label": "障害者対応型便所の設置の有無", "type": "flag", "required": 1},
     "has_accessible_gate": {"label": "障害者対応型改札口の設置の有無", "type": "flag", "required": 1},
     "has_fall_prevention": {"label": "転落防止のための設備の設置の有無", "type": "flag", "required": 1},
+    # 割合型（分子/分母の形式で表示、基準値以上の割合であれば1点）
+    "platform_ratio": {"label": "段差が解消されているプラットホームの割合", "type": "ratio", "numerator": "num_step_free_platforms", "denominator": "num_platforms", "required": 0.8},
     # 数値型（基準値以上であれば1点、未満なら0点）
-    "num_platforms": {"label": "プラットホームの数", "type": "number", "required": 6},
-    "num_step_free_platforms": {"label": "段差が解消されているプラットホームの数", "type": "number", "required": 6},
     "num_compliant_elevators": {"label": "移動等円滑化基準に適合しているエレベーターの設置基数", "type": "number", "required": 4},
     "num_compliant_escalators": {"label": "移動等円滑化基準に適合しているエスカレーターの設置基数", "type": "number", "required": 4},
     "num_compliant_slopes": {"label": "移動等円滑化基準に適合している傾斜路の設置箇所数", "type": "number", "required": 2},
@@ -108,6 +108,7 @@ BODY_QUERY_COLUMNS = BODY_BASE_COLUMNS + [
     "has_accessible_restroom",
     "has_accessible_gate",
     "has_fall_prevention",
+    "has_tactile_paving",  # 視覚障害用
     # 割合計算に必要な元のカラム
     "num_platforms",
     "num_step_free_platforms",
