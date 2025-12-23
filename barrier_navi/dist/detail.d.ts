@@ -37,6 +37,7 @@ declare class DetailPage {
     private tableBodyEl;
     private currentMode;
     constructor();
+    private setupBackButton;
     private load;
     private fetchApi;
     private renderDetail;

@@ -25,7 +25,22 @@ class DetailPage {
         else {
             this.currentMode = 'body';
         }
+        this.setupBackButton();
         this.load();
+    }
+    setupBackButton() {
+        const backBtn = document.getElementById('back_btn');
+        if (backBtn) {
+            if (this.currentMode === 'hearing') {
+                backBtn.href = 'hearing.html';
+            }
+            else if (this.currentMode === 'vision') {
+                backBtn.href = 'vision.html';
+            }
+            else {
+                backBtn.href = 'index.html';
+            }
+        }
     }
     async load() {
         const params = new URLSearchParams(window.location.search);

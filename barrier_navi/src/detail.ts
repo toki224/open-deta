@@ -62,7 +62,22 @@ class DetailPage {
         this.currentMode = 'body';
     }
 
+    this.setupBackButton();
     this.load();
+  }
+
+  private setupBackButton(): void {
+    const backBtn = document.getElementById('back_btn') as HTMLAnchorElement;
+
+    if (backBtn) {
+      if (this.currentMode === 'hearing') {
+        backBtn.href = 'hearing.html';
+      } else if (this.currentMode === 'vision') {
+        backBtn.href = 'vision.html';
+      } else {
+        backBtn.href = 'index.html';
+      }
+    }
   }
 
   private async load(): Promise<void> {
