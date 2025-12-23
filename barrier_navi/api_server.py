@@ -683,6 +683,310 @@ def reset_password():
         }), 500
 
 
+@app.route('/api/auth/profile', methods=['GET'])
+def get_profile():
+    """プロフィール情報を取得"""
+    try:
+        user_id = request.args.get('user_id', type=int)
+        
+        if not user_id:
+            return jsonify({
+                "success": False,
+                "error": "ユーザーIDが必要です"
+            }), 400
+        
+        db = DatabaseConnection(**MYSQL_CONFIG)
+        
+        # ユーザー情報を取得
+        user = db.execute_query(
+            "SELECT id, username, email FROM users WHERE id = %s LIMIT 1",
+            (user_id,)
+        )
+        
+        if not user:
+            db.close()
+            return jsonify({
+                "success": False,
+                "error": "ユーザーが見つかりません"
+            }), 404
+        
+        user = user[0]
+        
+        # users_preferencesテーブルから設定を取得
+        preferences = []
+        try:
+            preferences = db.execute_query(
+                "SELECT disability_type, favorite_stations, preferred_features FROM users_preferences WHERE user_id = %s LIMIT 1",
+                (user_id,)
+            )
+        except Exception as e:
+            # users_preferencesテーブルが存在しない、またはエラーが発生した場合
+            print(f"Warning: Failed to fetch from users_preferences: {str(e)}")
+            preferences = []
+        
+        # JSONフィールドをパース
+        profile_data = {
+            "id": user.get("id"),
+            "username": user.get("username"),
+            "email": user.get("email"),
+        }
+        
+        if preferences and len(preferences) > 0:
+            pref = preferences[0]
+            # disability_typeをパース
+            disability_type = pref.get("disability_type")
+            if disability_type:
+                try:
+                    # JSON文字列をパース（Unicodeエスケープも正しく処理される）
+                    if isinstance(disability_type, str):
+                        parsed = json.loads(disability_type)
+                        profile_data["disability_type"] = parsed if isinstance(parsed, list) else [parsed] if parsed else []
+                    else:
+                        profile_data["disability_type"] = disability_type if isinstance(disability_type, list) else []
+                except Exception as e:
+                    print(f"Warning: Failed to parse disability_type: {e}")
+                    profile_data["disability_type"] = []
+            else:
+                profile_data["disability_type"] = []
+            
+            # favorite_stationsをパースして駅IDから駅名に変換
+            favorite_stations = pref.get("favorite_stations")
+            if favorite_stations:
+                try:
+                    station_ids = json.loads(favorite_stations) if isinstance(favorite_stations, str) else favorite_stations
+                    if isinstance(station_ids, list) and len(station_ids) > 0:
+                        # 駅IDのリストから駅名を取得（SQLインジェクション対策のため整数に変換）
+                        station_ids_int = []
+                        for sid in station_ids:
+                            try:
+                                station_ids_int.append(int(sid))
+                            except (ValueError, TypeError):
+                                continue
+                        
+                        if station_ids_int:
+                            # 駅IDの配列として返す（データベース上でIDで表示されるように）
+                            profile_data["favorite_stations"] = station_ids_int
+                        else:
+                            profile_data["favorite_stations"] = []
+                    else:
+                        profile_data["favorite_stations"] = []
+                except Exception as e:
+                    print(f"Warning: Failed to parse favorite_stations: {e}")
+                    profile_data["favorite_stations"] = []
+            else:
+                profile_data["favorite_stations"] = []
+            
+            # preferred_featuresをパース
+            preferred_features = pref.get("preferred_features")
+            if preferred_features:
+                try:
+                    profile_data["preferred_features"] = json.loads(preferred_features) if isinstance(preferred_features, str) else preferred_features
+                except:
+                    profile_data["preferred_features"] = []
+            else:
+                profile_data["preferred_features"] = []
+        else:
+            # users_preferencesにデータがない場合はデフォルト値
+            profile_data["disability_type"] = []
+            profile_data["favorite_stations"] = []
+            profile_data["preferred_features"] = []
+        
+        db.close()
+        
+        return jsonify({
+            "success": True,
+            "data": profile_data
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/api/auth/profile', methods=['PUT'])
+def update_profile():
+    """プロフィール情報を更新"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        username = data.get('username', '').strip()
+        disability_type = data.get('disability_type')
+        favorite_stations = data.get('favorite_stations')
+        preferred_features = data.get('preferred_features')
+        
+        if not user_id:
+            return jsonify({
+                "success": False,
+                "error": "ユーザーIDが必要です"
+            }), 400
+        
+        db = DatabaseConnection(**MYSQL_CONFIG)
+        
+        # ユーザーの存在確認
+        user = db.execute_query(
+            "SELECT id FROM users WHERE id = %s LIMIT 1",
+            (user_id,)
+        )
+        
+        if not user:
+            db.close()
+            return jsonify({
+                "success": False,
+                "error": "ユーザーが見つかりません"
+            }), 404
+        
+        # ユーザー名の重複チェック（他のユーザーが使用していないか）
+        if username:
+            existing_username = db.execute_query(
+                "SELECT id FROM users WHERE username = %s AND id != %s LIMIT 1",
+                (username, user_id)
+            )
+            if existing_username:
+                db.close()
+                return jsonify({
+                    "success": False,
+                    "error": "このユーザー名は既に使用されています"
+                }), 400
+        
+        # usersテーブルの更新（ユーザー名のみ）
+        if username:
+            try:
+                db.execute_non_query(
+                    "UPDATE users SET username = %s WHERE id = %s",
+                    (username, user_id)
+                )
+            except Exception as e:
+                db.close()
+                return jsonify({
+                    "success": False,
+                    "error": f"ユーザー名の更新に失敗しました: {str(e)}"
+                }), 500
+        
+        # users_preferencesテーブルの更新
+        # 既存のレコードがあるか確認
+        existing_pref = []
+        try:
+            existing_pref = db.execute_query(
+                "SELECT user_id FROM users_preferences WHERE user_id = %s LIMIT 1",
+                (user_id,)
+            )
+        except Exception as e:
+            # users_preferencesテーブルが存在しない場合
+            print(f"Warning: users_preferences table may not exist: {str(e)}")
+            existing_pref = []
+        
+        disability_type_json = None
+        favorite_stations_json = None
+        preferred_features_json = None
+        
+        # 各フィールドをJSON文字列に変換（空の配列はNULLとして保存）
+        if disability_type is not None:
+            # 空の配列の場合はNULLとして保存
+            if isinstance(disability_type, list) and len(disability_type) == 0:
+                disability_type_json = None  # 空の配列はNULLとして保存
+            elif isinstance(disability_type, list):
+                # ensure_ascii=Falseで日本語をそのまま保存（Unicodeエスケープしない）
+                disability_type_json = json.dumps(disability_type, ensure_ascii=False)
+            else:
+                disability_type_json = None
+        else:
+            disability_type_json = None  # 明示的にNoneを設定（既存の値は保持）
+        
+        if favorite_stations is not None:
+            # 空の配列の場合はNULLとして保存
+            if isinstance(favorite_stations, list) and len(favorite_stations) == 0:
+                favorite_stations_json = None  # 空の配列はNULLとして保存
+            elif isinstance(favorite_stations, list):
+                favorite_stations_json = json.dumps(favorite_stations, ensure_ascii=False)
+            else:
+                favorite_stations_json = None
+        else:
+            favorite_stations_json = None  # 明示的にNoneを設定（既存の値は保持）
+        
+        if preferred_features is not None:
+            # 空の配列の場合はNULLとして保存
+            if isinstance(preferred_features, list) and len(preferred_features) == 0:
+                preferred_features_json = None  # 空の配列はNULLとして保存
+            elif isinstance(preferred_features, list):
+                preferred_features_json = json.dumps(preferred_features, ensure_ascii=False)
+            else:
+                preferred_features_json = None
+        else:
+            preferred_features_json = None  # 明示的にNoneを設定（既存の値は保持）
+        
+        try:
+            if existing_pref and len(existing_pref) > 0:
+                # 既存レコードを更新
+                update_fields = []
+                params = []
+                
+                # 各フィールドを更新（Noneの場合はNULLとして保存）
+                # 空の配列が送信された場合もNULLとして保存するため、常に更新する
+                if disability_type_json is not None:
+                    update_fields.append("disability_type = %s")
+                    params.append(disability_type_json)
+                else:
+                    # 空の配列またはNoneの場合はNULLとして保存
+                    update_fields.append("disability_type = NULL")
+                
+                if favorite_stations_json is not None:
+                    update_fields.append("favorite_stations = %s")
+                    params.append(favorite_stations_json)
+                else:
+                    # 空の配列またはNoneの場合はNULLとして保存
+                    update_fields.append("favorite_stations = NULL")
+                
+                if preferred_features_json is not None:
+                    update_fields.append("preferred_features = %s")
+                    params.append(preferred_features_json)
+                else:
+                    # 空の配列またはNoneの場合はNULLとして保存
+                    update_fields.append("preferred_features = NULL")
+                
+                # updated_atカラムが存在する場合
+                try:
+                    columns = db.execute_query("SHOW COLUMNS FROM users_preferences LIKE 'updated_at'")
+                    if columns:
+                        update_fields.append("updated_at = %s")
+                        params.append(datetime.now())
+                except:
+                    pass
+                
+                if update_fields:
+                    params.append(user_id)
+                    query = f"UPDATE users_preferences SET {', '.join(update_fields)} WHERE user_id = %s"
+                    db.execute_non_query(query, tuple(params))
+            else:
+                # 新規レコードを作成
+                db.execute_non_query(
+                    """INSERT INTO users_preferences 
+                       (user_id, disability_type, favorite_stations, preferred_features) 
+                       VALUES (%s, %s, %s, %s)""",
+                    (user_id, disability_type_json, favorite_stations_json, preferred_features_json)
+                )
+            
+            db.close()
+            
+            return jsonify({
+                "success": True,
+                "message": "プロフィールを更新しました"
+            })
+        except Exception as e:
+            db.close()
+            return jsonify({
+                "success": False,
+                "error": f"プロフィールの更新に失敗しました: {str(e)}"
+            }), 500
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
 if __name__ == '__main__':
     print("Flask APIサーバーを起動します...")
     print("http://localhost:5000 でアクセスできます")

@@ -40,3 +40,6 @@ except requests.exceptions.ConnectionError:
 except Exception as e:
     print(f"✗ エラー: {e}")
 
+
+
+

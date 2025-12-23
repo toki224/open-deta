@@ -103,10 +103,8 @@ class HomePage {
   }
 
   private handleProfile(): void {
-    // プロフィール画面への遷移（未実装の場合はアラート）
-    alert('プロフィール画面は準備中です');
-    // 実装時は以下のように変更
-    // window.location.href = 'profile.html';
+    // プロフィール画面への遷移
+    window.location.href = 'profile.html';
   }
 
   private handleLogout(): void {

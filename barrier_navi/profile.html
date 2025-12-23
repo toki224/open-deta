@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>バリアナビ - プロフィール</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-shell">
+        <header class="profile-header">
+            <button class="back-btn" id="back-btn" aria-label="戻る">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <h1>プロフィール</h1>
+        </header>
+
+        <main class="profile-main">
+            <div id="loading" class="loading">読み込み中...</div>
+            <div id="error-message" class="error-message" style="display: none;"></div>
+
+            <form id="profile-form" style="display: none;" class="profile-form-layout">
+                <div class="profile-columns">
+                    <!-- 左側: 登録情報 -->
+                    <div class="profile-left-column">
+                        <section class="profile-section">
+                            <h2>登録情報</h2>
+                            
+                            <div class="form-group">
+                                <label for="username">ユーザー名</label>
+                                <input 
+                                    type="text" 
+                                    id="username" 
+                                    name="username" 
+                                    placeholder="ユーザー名"
+                                    required
+                                />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="email">メールアドレス</label>
+                                <input 
+                                    type="email" 
+                                    id="email" 
+                                    name="email" 
+                                    placeholder="メールアドレス"
+                                    required
+                                    readonly
+                                    class="readonly-input"
+                                />
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- 右側: その他の情報 -->
+                    <div class="profile-right-column">
+                        <!-- 障害情報セクション -->
+                        <section class="profile-section">
+                            <h2>障害情報</h2>
+                            <p class="section-description">あなたの障害に該当する項目を選択してください</p>
+                            
+                            <div class="form-group">
+                                <label for="disability_type">障害の種類</label>
+                                <select 
+                                    id="disability_type" 
+                                    name="disability_type" 
+                                    class="disability-select"
+                                >
+                                    <option value="">選択してください</option>
+                                    <option value="身体">身体障害</option>
+                                    <option value="聴覚">聴覚障害</option>
+                                    <option value="視覚">視覚障害</option>
+                                </select>
+                            </div>
+                        </section>
+
+                        <!-- お気に入りの駅セクション -->
+                        <section class="profile-section">
+                            <h2>お気に入りの駅</h2>
+                            <p class="section-description">よく利用する駅を登録してください</p>
+                            
+                            <div class="favorite-stations-container">
+                                <div class="station-search">
+                                    <input 
+                                        type="text" 
+                                        id="station-search-input" 
+                                        placeholder="駅名で検索..."
+                                        autocomplete="off"
+                                    />
+                                    <div id="station-search-results" class="station-search-results" style="display: none;"></div>
+                                </div>
+                                
+                                <div id="favorite-stations-list" class="favorite-stations-list">
+                                    <p class="empty-message">お気に入りの駅が登録されていません</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- 優先したい機能セクション -->
+                        <section class="profile-section">
+                            <h2>優先したい機能</h2>
+                            <p class="section-description">重要な機能を選択してください（複数選択可）</p>
+                            
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input 
+                                        type="checkbox" 
+                                        name="preferred_features" 
+                                        value="エレベーター"
+                                        class="feature-checkbox"
+                                    />
+                                    <span>エレベーター</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input 
+                                        type="checkbox" 
+                                        name="preferred_features" 
+                                        value="エスカレーター"
+                                        class="feature-checkbox"
+                                    />
+                                    <span>エスカレーター</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input 
+                                        type="checkbox" 
+                                        name="preferred_features" 
+                                        value="障害者対応型改札口"
+                                        class="feature-checkbox"
+                                    />
+                                    <span>障害者対応型改札口</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input 
+                                        type="checkbox" 
+                                        name="preferred_features" 
+                                        value="障害者対応型便所"
+                                        class="feature-checkbox"
+                                    />
+                                    <span>障害者対応型便所</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input 
+                                        type="checkbox" 
+                                        name="preferred_features" 
+                                        value="案内設備"
+                                        class="feature-checkbox"
+                                    />
+                                    <span>案内設備</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input 
+                                        type="checkbox" 
+                                        name="preferred_features" 
+                                        value="転落防止設備"
+                                        class="feature-checkbox"
+                                    />
+                                    <span>転落防止設備</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input 
+                                        type="checkbox" 
+                                        name="preferred_features" 
+                                        value="段差解消"
+                                        class="feature-checkbox"
+                                    />
+                                    <span>段差解消</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input 
+                                        type="checkbox" 
+                                        name="preferred_features" 
+                                        value="車いす対応プラットフォーム"
+                                        class="feature-checkbox"
+                                    />
+                                    <span>車いす対応プラットフォーム</span>
+                                </label>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="primary-btn save-btn">保存</button>
+                    <button type="button" class="ghost-btn cancel-btn" id="cancel-btn">キャンセル</button>
+                </div>
+
+                <div id="save-success" class="success-message" style="display: none;"></div>
+            </form>
+        </main>
+    </div>
+
+    <script src="dist/profile.js"></script>
+</body>
+</html>

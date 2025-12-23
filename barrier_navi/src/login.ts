@@ -103,6 +103,9 @@ class LoginPage {
         if (response.user?.id) {
           localStorage.setItem('userId', response.user.id.toString());
         }
+        if (response.user?.email) {
+          localStorage.setItem('userEmail', response.user.email);
+        }
         window.location.href = 'home.html';
       } else {
         // ログイン失敗
