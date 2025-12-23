@@ -340,6 +340,7 @@ def get_body_accessible_stations():
         limit = request.args.get('limit', default=20, type=int)
         offset = request.args.get('offset', default=0, type=int)
         filters_param = request.args.get('filters', default=None, type=str)
+        sort_order = request.args.get('sort', default='none', type=str)  # 'none', 'score-asc', 'score-desc'
 
         # フィルタリストを取得
         filter_list = []
@@ -387,16 +388,32 @@ def get_body_accessible_stations():
         count_result = db.execute_query(count_query, tuple(params))
         total_count = count_result[0]['total'] if count_result else 0
 
-        # 2. データ本体を取得
+        # 2. データ本体を取得（ソートが必要な場合は全件取得してからソート）
         columns = ", ".join(BODY_QUERY_COLUMNS)
-        query = f"SELECT {columns} {where_clause} ORDER BY station_name LIMIT %s OFFSET %s"
-        # LIMITとOFFSETをパラメータに追加
-        data_params = params + [limit, offset]
-        rows = db.execute_query(query, tuple(data_params))
+        
+        if sort_order in ['score-asc', 'score-desc']:
+            # スコアでソートする場合は全件取得してからソート
+            query = f"SELECT {columns} {where_clause}"
+            rows = db.execute_query(query, tuple(params))
+            
+            # スコアを計算してソート
+            data = [build_body_station_response(row, include_details=False) for row in rows]
+            
+            if sort_order == 'score-asc':
+                data.sort(key=lambda x: (x['score']['met_items'], x['station_name']))
+            elif sort_order == 'score-desc':
+                data.sort(key=lambda x: (-x['score']['met_items'], x['station_name']))
+            
+            # ページネーションを適用
+            data = data[offset:offset + limit]
+        else:
+            # ソートなしの場合は従来通り
+            query = f"SELECT {columns} {where_clause} ORDER BY station_name LIMIT %s OFFSET %s"
+            data_params = params + [limit, offset]
+            rows = db.execute_query(query, tuple(data_params))
+            data = [build_body_station_response(row, include_details=False) for row in rows]
         
         db.close()
-
-        data = [build_body_station_response(row, include_details=False) for row in rows]
 
         return jsonify({
             "success": True,

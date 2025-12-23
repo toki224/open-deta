@@ -300,6 +300,10 @@ class StationApp {
     if (this.selectedFilters.length > 0) {
       params.append('filters', JSON.stringify(this.selectedFilters));
     }
+    // ソート順をAPIに送信
+    if (this.sortOrder !== 'none') {
+      params.append('sort', this.sortOrder);
+    }
 
     const lineSelect = document.getElementById('line-select') as HTMLSelectElement | null;
     if (lineSelect && lineSelect.value) {
@@ -315,19 +319,11 @@ class StationApp {
     if (loadingIndicator) loadingIndicator.style.display = 'none';
 
     if (response.success && response.data) {
-      let sortedData = [...response.data];
-      
-      // ソートを適用
-      if (this.sortOrder === 'score-asc') {
-        sortedData.sort((a, b) => a.score.percentage - b.score.percentage);
-      } else if (this.sortOrder === 'score-desc') {
-        sortedData.sort((a, b) => b.score.percentage - a.score.percentage);
-      }
-      
-      this.lastResultCount = sortedData.length;
-      this.totalCount = response.total_count || 0; // ★追加: 全件数を保存
+      // バックエンドでソート済みなので、そのまま表示
+      this.lastResultCount = response.data.length;
+      this.totalCount = response.total_count || 0;
 
-      this.renderStationCards(sortedData);
+      this.renderStationCards(response.data);
       this.updatePagination();
       this.updateActiveFilters();
     } else if (stationsContainer) {
