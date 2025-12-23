@@ -39,7 +39,7 @@ interface BodyMetricDefinition {
     key: string;
     label: string;
     required: number;
-    type: 'flag' | 'number';
+    type: 'flag' | 'number' | 'ratio';
 }
 declare const BODY_METRICS: BodyMetricDefinition[];
 declare const HEARING_METRICS: BodyMetricDefinition[];

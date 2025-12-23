@@ -298,6 +298,15 @@ def get_stations_with_score(mode: str):
                 if metric_def["type"] == "flag":
                     where_clause += f" AND {filter_key} = %s"
                     params.append(1)
+                elif metric_def["type"] == "ratio":
+                    # 割合型: 分子と分母の両方が存在し、割合が基準値以上であることを確認
+                    numerator_key = metric_def.get("numerator")
+                    denominator_key = metric_def.get("denominator")
+                    required_ratio = metric_def.get("required", 0.8)
+                    if numerator_key and denominator_key:
+                        # 分母が0より大きく、分子/分母 >= 基準値 の条件
+                        where_clause += f" AND {denominator_key} > 0 AND ({numerator_key} / NULLIF({denominator_key}, 0)) >= %s"
+                        params.append(required_ratio)
                 else:
                     where_clause += f" AND {filter_key} > %s"
                     params.append(0)
