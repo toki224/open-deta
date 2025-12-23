@@ -42,7 +42,7 @@ class DetailPage {
   private tableBodyEl: HTMLElement | null = null;
 
   // ★追加: 現在のモード
-  private currentMode: 'body' | 'hearing' = 'body';
+  private currentMode: 'body' | 'hearing' | 'vision' = 'body';
 
   constructor() {
     this.titleEl = document.getElementById('detail-title');
@@ -56,6 +56,8 @@ class DetailPage {
     const bodyMode = document.body.dataset.mode;
     if (urlMode === 'hearing' || bodyMode === 'hearing') {
         this.currentMode = 'hearing';
+    } else if (urlMode === 'vision' || bodyMode === 'vision') {
+        this.currentMode = 'vision';
     } else {
         this.currentMode = 'body';
     }
@@ -72,7 +74,7 @@ class DetailPage {
     }
 
     // ★修正: モードに応じてAPIパスを切り替える
-    const apiPath = this.currentMode === 'hearing' ? '/hearing/stations' : '/body/stations';
+    const apiPath = this.currentMode === 'hearing' ? '/hearing/stations' : this.currentMode === 'vision' ? '/vision/stations' : '/body/stations';
     
     // 修正後:
     const response = await this.fetchApi<DetailStation>(`${apiPath}/${stationId}`);

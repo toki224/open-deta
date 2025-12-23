@@ -28,6 +28,21 @@ const HEARING_METRICS = [
     { key: 'has_accessible_gate', label: '障害者対応型改札口の設置の有無', required: 1, type: 'flag' },
     { key: 'has_fall_prevention', label: '転落防止のための設備の設置の有無', required: 1, type: 'flag' }
 ];
+const VISION_METRICS = [
+    // フラグ型（〇×で表せる項目）：設置されていれば1点
+    { key: 'step_response_status', label: '段差への対応', required: 1, type: 'flag' },
+    { key: 'has_tactile_paving', label: '視覚障害者誘導用ブロックの設置の有無', required: 1, type: 'flag' },
+    { key: 'has_guidance_system', label: '案内設備の設置の有無', required: 1, type: 'flag' },
+    { key: 'has_accessible_restroom', label: '障害者対応型便所の設置の有無', required: 1, type: 'flag' },
+    { key: 'has_accessible_gate', label: '障害者対応型改札口の設置の有無', required: 1, type: 'flag' },
+    { key: 'has_fall_prevention', label: '転落防止のための設備の設置の有無', required: 1, type: 'flag' },
+    // 数値型（基準値以上であれば1点、未満なら0点）
+    { key: 'num_platforms', label: 'プラットホームの数', required: 6, type: 'number' },
+    { key: 'num_step_free_platforms', label: '段差が解消されているプラットホームの数', required: 6, type: 'number' },
+    { key: 'num_compliant_elevators', label: '移動等円滑化基準に適合しているエレベーターの設置基数', required: 4, type: 'number' },
+    { key: 'num_compliant_escalators', label: '移動等円滑化基準に適合しているエスカレーターの設置基数', required: 4, type: 'number' },
+    { key: 'num_compliant_slopes', label: '移動等円滑化基準に適合している傾斜路の設置箇所数', required: 2, type: 'number' },
+];
 class StationApp {
     constructor() {
         this.apiBaseUrl = 'http://localhost:5000/api';
@@ -44,6 +59,10 @@ class StationApp {
         if (mode === 'hearing') {
             this.currentMode = 'hearing';
             this.currentMetrics = HEARING_METRICS;
+        }
+        else if (mode === 'vision') {
+            this.currentMode = 'vision';
+            this.currentMetrics = VISION_METRICS;
         }
         else {
             this.currentMode = 'body';
@@ -245,7 +264,7 @@ class StationApp {
         if (lineSelect && lineSelect.value) {
             params.append('line_name', lineSelect.value);
         }
-        const apiPath = this.currentMode === 'hearing' ? '/hearing/stations' : '/body/stations';
+        const apiPath = this.currentMode === 'hearing' ? '/hearing/stations' : this.currentMode === 'vision' ? '/vision/stations' : '/body/stations';
         const response = await this.fetchApi(`${apiPath}?${params.toString()}`);
         if (loadingIndicator)
             loadingIndicator.style.display = 'none';

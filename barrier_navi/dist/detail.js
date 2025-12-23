@@ -19,6 +19,9 @@ class DetailPage {
         if (urlMode === 'hearing' || bodyMode === 'hearing') {
             this.currentMode = 'hearing';
         }
+        else if (urlMode === 'vision' || bodyMode === 'vision') {
+            this.currentMode = 'vision';
+        }
         else {
             this.currentMode = 'body';
         }
@@ -32,7 +35,7 @@ class DetailPage {
             return;
         }
         // ★修正: モードに応じてAPIパスを切り替える
-        const apiPath = this.currentMode === 'hearing' ? '/hearing/stations' : '/body/stations';
+        const apiPath = this.currentMode === 'hearing' ? '/hearing/stations' : this.currentMode === 'vision' ? '/vision/stations' : '/body/stations';
         // 修正後:
         const response = await this.fetchApi(`${apiPath}/${stationId}`);
         if (response.success && response.data) {

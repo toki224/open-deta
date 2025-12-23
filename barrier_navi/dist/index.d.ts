@@ -43,6 +43,7 @@ interface BodyMetricDefinition {
 }
 declare const BODY_METRICS: BodyMetricDefinition[];
 declare const HEARING_METRICS: BodyMetricDefinition[];
+declare const VISION_METRICS: BodyMetricDefinition[];
 declare class StationApp {
     private apiBaseUrl;
     private currentPage;
