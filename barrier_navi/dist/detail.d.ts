@@ -18,6 +18,9 @@ interface DetailMetric {
     ratio: number;
     met: boolean;
     type: string;
+    numerator?: number;
+    denominator?: number;
+    percentage?: number;
 }
 interface DetailStation {
     station_id: number;

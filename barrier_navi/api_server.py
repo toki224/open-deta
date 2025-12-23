@@ -58,13 +58,11 @@ BODY_METRIC_DEFINITIONS: Dict[str, Dict[str, Any]] = {
     "has_accessible_restroom": {"label": "障害者対応型便所の設置の有無", "type": "flag", "required": 1},
     "has_accessible_gate": {"label": "障害者対応型改札口の設置の有無", "type": "flag", "required": 1},
     "has_fall_prevention": {"label": "転落防止のための設備の設置の有無", "type": "flag", "required": 1},
+    # 割合型（分子/分母の形式で表示、基準値以上の割合であれば1点）
+    "platform_ratio": {"label": "段差が解消されているプラットホームの割合", "type": "ratio", "numerator": "num_step_free_platforms", "denominator": "num_platforms", "required": 0.8},
+    "elevator_ratio": {"label": "移動等円滑化基準に適合しているエレベーターの割合", "type": "ratio", "numerator": "num_compliant_elevators", "denominator": "num_elevators", "required": 0.8},
+    "escalator_ratio": {"label": "移動等円滑化基準に適合しているエスカレーターの割合", "type": "ratio", "numerator": "num_compliant_escalators", "denominator": "num_escalators", "required": 0.8},
     # 数値型（基準値以上であれば1点、未満なら0点）
-    "num_platforms": {"label": "プラットホームの数", "type": "number", "required": 6},
-    "num_step_free_platforms": {"label": "段差が解消されているプラットホームの数", "type": "number", "required": 6},
-    "num_elevators": {"label": "エレベーターの設置基数", "type": "number", "required": 4},
-    "num_compliant_elevators": {"label": "移動等円滑化基準に適合しているエレベーターの設置基数", "type": "number", "required": 4},
-    "num_escalators": {"label": "エスカレーターの設置基数", "type": "number", "required": 4},
-    "num_compliant_escalators": {"label": "移動等円滑化基準に適合しているエスカレーターの設置基数", "type": "number", "required": 4},
     "num_other_lifts": {"label": "その他の昇降機の設置基数", "type": "number", "required": 2},
     "num_slopes": {"label": "傾斜路の設置箇所数", "type": "number", "required": 2},
     "num_compliant_slopes": {"label": "移動等円滑化基準に適合している傾斜路の設置箇所数", "type": "number", "required": 2},
@@ -102,10 +100,30 @@ BODY_BASE_COLUMNS = [
     "prefecture",
     "city"
 ]
-BODY_QUERY_COLUMNS = BODY_BASE_COLUMNS + list(BODY_METRIC_DEFINITIONS.keys())
+# 割合型のメトリクスは計算値なので、元のカラム名を含める必要がある
+BODY_QUERY_COLUMNS = BODY_BASE_COLUMNS + [
+    # フラグ型
+    "step_response_status",
+    "has_guidance_system",
+    "has_accessible_restroom",
+    "has_accessible_gate",
+    "has_fall_prevention",
+    # 割合計算に必要な元のカラム
+    "num_platforms",
+    "num_step_free_platforms",
+    "num_elevators",
+    "num_compliant_elevators",
+    "num_escalators",
+    "num_compliant_escalators",
+    # 数値型
+    "num_other_lifts",
+    "num_slopes",
+    "num_compliant_slopes",
+    "num_wheelchair_accessible_platforms",
+]
 
 
-def evaluate_metric(value: Any, definition: Dict[str, Any]) -> Dict[str, Any]:
+def evaluate_metric(value: Any, definition: Dict[str, Any], row: Dict[str, Any] = None) -> Dict[str, Any]:
     metric_type = definition.get("type", "flag")
     required = definition.get("required", 1) or 1
     result: Dict[str, Any] = {"raw_value": value, "required": required}
@@ -114,6 +132,48 @@ def evaluate_metric(value: Any, definition: Dict[str, Any]) -> Dict[str, Any]:
         met = str(value).strip() == "1"
         ratio = 1.0 if met else 0.0
         result.update({"processed_value": "○" if met else "×", "ratio": ratio, "met": met})
+    elif metric_type == "ratio":
+        # 割合型: 分子と分母のフィールドから計算
+        numerator_key = definition.get("numerator")
+        denominator_key = definition.get("denominator")
+        if row and numerator_key and denominator_key:
+            try:
+                numerator = float(row.get(numerator_key, 0) or 0)
+                denominator = float(row.get(denominator_key, 0) or 0)
+            except (TypeError, ValueError):
+                numerator = 0.0
+                denominator = 0.0
+            
+            if denominator > 0:
+                calculated_ratio = numerator / denominator
+                percentage = calculated_ratio * 100
+                met = calculated_ratio >= required
+                result.update({
+                    "processed_value": f"{int(numerator)}/{int(denominator)} ({percentage:.1f}%)",
+                    "numerator": int(numerator),
+                    "denominator": int(denominator),
+                    "percentage": round(percentage, 1),
+                    "ratio": calculated_ratio,
+                    "met": met
+                })
+            else:
+                result.update({
+                    "processed_value": "0/0 (0.0%)",
+                    "numerator": 0,
+                    "denominator": 0,
+                    "percentage": 0.0,
+                    "ratio": 0.0,
+                    "met": False
+                })
+        else:
+            result.update({
+                "processed_value": "-",
+                "numerator": 0,
+                "denominator": 0,
+                "percentage": 0.0,
+                "ratio": 0.0,
+                "met": False
+            })
     else:
         try:
             numeric_value = float(value) if value is not None else 0.0
@@ -132,12 +192,12 @@ def compute_score(row: Dict[str, Any], definitions: Dict[str, Any], include_deta
     details: List[Dict[str, Any]] = []
 
     for field, definition in definitions.items():
-        metric_result = evaluate_metric(row.get(field), definition)
+        metric_result = evaluate_metric(row.get(field), definition, row=row)
         if metric_result["met"]:
             met_items += 1
 
         if include_details:
-            details.append({
+            detail_item = {
                 "key": field,
                 "label": definition["label"],
                 "value": metric_result["processed_value"],
@@ -146,7 +206,13 @@ def compute_score(row: Dict[str, Any], definitions: Dict[str, Any], include_deta
                 "met": metric_result["met"],
                 "type": definition["type"],
                 "required": definition["required"]
-            })
+            }
+            # 割合型の場合は追加情報を含める
+            if definition.get("type") == "ratio":
+                detail_item["numerator"] = metric_result.get("numerator", 0)
+                detail_item["denominator"] = metric_result.get("denominator", 0)
+                detail_item["percentage"] = metric_result.get("percentage", 0.0)
+            details.append(detail_item)
 
     total_items = len(definitions)
     percentage = (met_items / total_items) * 100 if total_items > 0 else 0

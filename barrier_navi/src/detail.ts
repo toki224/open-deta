@@ -21,6 +21,9 @@ interface DetailMetric {
   ratio: number;
   met: boolean;
   type: string;
+  numerator?: number;
+  denominator?: number;
+  percentage?: number;
 }
 
 interface DetailStation {
@@ -125,7 +128,12 @@ class DetailPage {
       let valueDisplay = '';
       let requiredDisplay = '';
       
-      if (metric.type === 'number') {
+      if (metric.type === 'ratio') {
+        // 割合型: 既にAPI側で「何分の何 (何%)」形式で処理されているので、そのまま表示
+        valueDisplay = String(metric.value ?? '-');
+        const requiredPercent = (metric.required !== undefined && metric.required !== null) ? (metric.required * 100) : 100;
+        requiredDisplay = `${requiredPercent}%以上`;
+      } else if (metric.type === 'number') {
         const rawValue = typeof metric.raw_value === 'number' ? metric.raw_value : (metric.value !== null && typeof metric.value === 'number' ? metric.value : 0);
         valueDisplay = `${rawValue}`;
         const required = (metric.required !== undefined && metric.required !== null) ? metric.required : '不明';
