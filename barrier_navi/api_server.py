@@ -363,10 +363,6 @@ def get_body_accessible_stations():
             where_clause += " AND prefecture = %s"
             params.append(prefecture)
         if line_name:
-            search_line = line_name.replace('線', '')
-
-            if search_line.endswith('新幹'):
-                 pass
             where_clause += " AND line_name LIKE %s"
             params.append(f"%{line_name}%")
 

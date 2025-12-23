@@ -310,10 +310,6 @@ class StationApp {
         params.append('line_name', lineSelect.value);
     }
 
-    if (this.selectedFilters.length > 0) {
-      params.append('filters', JSON.stringify(this.selectedFilters));
-    }
-
     const response = await this.fetchApi<BodyStationSummary[]>(`/body/stations?${params.toString()}`);
 
     if (loadingIndicator) loadingIndicator.style.display = 'none';
