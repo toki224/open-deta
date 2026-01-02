@@ -13,8 +13,6 @@ interface BodyScoreSummary {
     total_items: number;
     percentage: number;
     label: string;
-    weighted_score?: number;
-    max_weighted_score?: number;
 }
 interface BodyStationSummary {
     station_id: number;
@@ -30,11 +28,9 @@ interface BodyMetricDetail {
     label: string;
     value: number | string | null;
     raw_value: number | string | null;
-    required: number;
     ratio: number;
     met: boolean;
     type: string;
-    weight: number;
 }
 interface BodyStationDetail extends BodyStationSummary {
     metrics: BodyMetricDetail[];
@@ -43,9 +39,11 @@ interface BodyMetricDefinition {
     key: string;
     label: string;
     required: number;
-    type: 'flag' | 'number';
+    type: 'flag' | 'number' | 'ratio';
 }
 declare const BODY_METRICS: BodyMetricDefinition[];
+declare const HEARING_METRICS: BodyMetricDefinition[];
+declare const VISION_METRICS: BodyMetricDefinition[];
 declare class StationApp {
     private apiBaseUrl;
     private currentPage;
@@ -56,6 +54,8 @@ declare class StationApp {
     private totalCount;
     private selectedFilters;
     private sortOrder;
+    private currentMode;
+    private currentMetrics;
     constructor();
     private init;
     private renderFilterControls;
@@ -71,5 +71,6 @@ declare class StationApp {
     private updatePagination;
     private navigateToDetail;
     private escapeHtml;
+    private fetchLines;
 }
 //# sourceMappingURL=index.d.ts.map

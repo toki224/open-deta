@@ -55,23 +55,46 @@ if not MYSQL_CONFIG["password"]:
     print("   MYSQL_DATABASE=station\n")
 
 BODY_METRIC_DEFINITIONS: Dict[str, Dict[str, Any]] = {
+    # フラグ型（〇×で表せる項目）：設置されていれば1点
     "step_response_status": {"label": "段差への対応", "type": "flag", "required": 1},
     "has_guidance_system": {"label": "案内設備の設置の有無", "type": "flag", "required": 1},
     "has_accessible_restroom": {"label": "障害者対応型便所の設置の有無", "type": "flag", "required": 1},
     "has_accessible_gate": {"label": "障害者対応型改札口の設置の有無", "type": "flag", "required": 1},
     "has_fall_prevention": {"label": "転落防止のための設備の設置の有無", "type": "flag", "required": 1},
-    "num_platforms": {"label": "プラットホームの有無", "type": "number", "required": 6},
-    "num_step_free_platforms": {"label": "段差が解消されているプラットホームの有無", "type": "number", "required": 6},
-    "num_elevators": {"label": "エレベーターの有無", "type": "number", "required": 4},
-    "num_compliant_elevators": {"label": "移動等円滑化基準に適合しているエレベーターの有無", "type": "number", "required": 4},
-    "num_escalators": {"label": "エスカレーターの有無", "type": "number", "required": 4},
-    "num_compliant_escalators": {"label": "移動等円滑化基準に適合しているエスカレーターの有無", "type": "number", "required": 4},
-    "num_other_lifts": {"label": "その他の昇降機の有無", "type": "number", "required": 2},
-    "num_slopes": {"label": "傾斜路の有無", "type": "number", "required": 2},
-    "num_compliant_slopes": {"label": "移動等円滑化基準に適合している傾斜路の有無", "type": "number", "required": 2},
-    "num_wheelchair_accessible_platforms": {"label": "車いす使用者の円滑な乗降が可能なプラットホームの有無", "type": "number", "required": 6},
+    # 割合型（分子/分母の形式で表示、基準値以上の割合であれば1点）
+    "platform_ratio": {"label": "段差が解消されているプラットホームの割合", "type": "ratio", "numerator": "num_step_free_platforms", "denominator": "num_platforms", "required": 0.8},
+    "elevator_ratio": {"label": "移動等円滑化基準に適合しているエレベーターの割合", "type": "ratio", "numerator": "num_compliant_elevators", "denominator": "num_elevators", "required": 0.8},
+    "escalator_ratio": {"label": "移動等円滑化基準に適合しているエスカレーターの割合", "type": "ratio", "numerator": "num_compliant_escalators", "denominator": "num_escalators", "required": 0.8},
+    # 数値型（基準値以上であれば1点、未満なら0点）
+    "num_other_lifts": {"label": "その他の昇降機の設置基数", "type": "number", "required": 2},
+    "num_slopes": {"label": "傾斜路の設置箇所数", "type": "number", "required": 2},
+    "num_compliant_slopes": {"label": "移動等円滑化基準に適合している傾斜路の設置箇所数", "type": "number", "required": 2},
+    "num_wheelchair_accessible_platforms": {"label": "車いす使用者の円滑な乗降が可能なプラットホームの数", "type": "number", "required": 6},
 }
 
+HEARING_METRIC_DEFINITIONS: Dict[str, Dict[str, Any]] = {
+    # フラグ型（〇×で表せる項目）：設置されていれば1点
+    "has_guidance_system": {"label": "案内設備の設置の有無", "type": "flag", "required": 1},
+    "has_accessible_restroom": {"label": "障害者対応型便所の設置の有無", "type": "flag", "required": 1},
+    "has_accessible_gate": {"label": "障害者対応型改札口の設置の有無", "type": "flag", "required": 1},
+    "has_fall_prevention": {"label": "転落防止のための設備の設置の有無", "type": "flag", "required": 1},
+}
+
+VISION_METRIC_DEFINITIONS: Dict[str, Dict[str, Any]] = {
+    # フラグ型（〇×で表せる項目）：設置されていれば1点
+    "step_response_status": {"label": "段差への対応", "type": "flag", "required": 1},
+    "has_tactile_paving": {"label": "視覚障害者誘導用ブロックの設置の有無", "type": "flag", "required": 1},
+    "has_guidance_system": {"label": "案内設備の設置の有無", "type": "flag", "required": 1},
+    "has_accessible_restroom": {"label": "障害者対応型便所の設置の有無", "type": "flag", "required": 1},
+    "has_accessible_gate": {"label": "障害者対応型改札口の設置の有無", "type": "flag", "required": 1},
+    "has_fall_prevention": {"label": "転落防止のための設備の設置の有無", "type": "flag", "required": 1},
+    # 割合型（分子/分母の形式で表示、基準値以上の割合であれば1点）
+    "platform_ratio": {"label": "段差が解消されているプラットホームの割合", "type": "ratio", "numerator": "num_step_free_platforms", "denominator": "num_platforms", "required": 0.8},
+    # 数値型（基準値以上であれば1点、未満なら0点）
+    "num_compliant_elevators": {"label": "移動等円滑化基準に適合しているエレベーターの設置基数", "type": "number", "required": 4},
+    "num_compliant_escalators": {"label": "移動等円滑化基準に適合しているエスカレーターの設置基数", "type": "number", "required": 4},
+    "num_compliant_slopes": {"label": "移動等円滑化基準に適合している傾斜路の設置箇所数", "type": "number", "required": 2},
+}
 BODY_BASE_COLUMNS = [
     "id",
     "station_name",
@@ -80,31 +103,31 @@ BODY_BASE_COLUMNS = [
     "prefecture",
     "city"
 ]
-BODY_QUERY_COLUMNS = BODY_BASE_COLUMNS + list(BODY_METRIC_DEFINITIONS.keys())
+# 割合型のメトリクスは計算値なので、元のカラム名を含める必要がある
+BODY_QUERY_COLUMNS = BODY_BASE_COLUMNS + [
+    # フラグ型
+    "step_response_status",
+    "has_guidance_system",
+    "has_accessible_restroom",
+    "has_accessible_gate",
+    "has_fall_prevention",
+    "has_tactile_paving",  # 視覚障害用
+    # 割合計算に必要な元のカラム
+    "num_platforms",
+    "num_step_free_platforms",
+    "num_elevators",
+    "num_compliant_elevators",
+    "num_escalators",
+    "num_compliant_escalators",
+    # 数値型
+    "num_other_lifts",
+    "num_slopes",
+    "num_compliant_slopes",
+    "num_wheelchair_accessible_platforms",
+]
 
 
-def parse_weight_payload(payload: str) -> Dict[str, float]:
-    """重み付け設定をJSON文字列から取得"""
-    default_weight = 2.0
-    weights = {key: default_weight for key in BODY_METRIC_DEFINITIONS}
-    if not payload:
-        return weights
-    try:
-        data = json.loads(payload)
-        if isinstance(data, dict):
-            for key, value in data.items():
-                try:
-                    numeric_value = float(value)
-                except (TypeError, ValueError):
-                    continue
-                if key in weights and numeric_value > 0:
-                    weights[key] = numeric_value
-    except json.JSONDecodeError:
-        pass
-    return weights
-
-
-def evaluate_metric(value: Any, definition: Dict[str, Any]) -> Dict[str, Any]:
+def evaluate_metric(value: Any, definition: Dict[str, Any], row: Dict[str, Any] = None) -> Dict[str, Any]:
     metric_type = definition.get("type", "flag")
     required = definition.get("required", 1) or 1
     result: Dict[str, Any] = {"raw_value": value, "required": required}
@@ -113,6 +136,48 @@ def evaluate_metric(value: Any, definition: Dict[str, Any]) -> Dict[str, Any]:
         met = str(value).strip() == "1"
         ratio = 1.0 if met else 0.0
         result.update({"processed_value": "○" if met else "×", "ratio": ratio, "met": met})
+    elif metric_type == "ratio":
+        # 割合型: 分子と分母のフィールドから計算
+        numerator_key = definition.get("numerator")
+        denominator_key = definition.get("denominator")
+        if row and numerator_key and denominator_key:
+            try:
+                numerator = float(row.get(numerator_key, 0) or 0)
+                denominator = float(row.get(denominator_key, 0) or 0)
+            except (TypeError, ValueError):
+                numerator = 0.0
+                denominator = 0.0
+            
+            if denominator > 0:
+                calculated_ratio = numerator / denominator
+                percentage = calculated_ratio * 100
+                met = calculated_ratio >= required
+                result.update({
+                    "processed_value": f"{int(numerator)}/{int(denominator)} ({percentage:.1f}%)",
+                    "numerator": int(numerator),
+                    "denominator": int(denominator),
+                    "percentage": round(percentage, 1),
+                    "ratio": calculated_ratio,
+                    "met": met
+                })
+            else:
+                result.update({
+                    "processed_value": "0/0 (0.0%)",
+                    "numerator": 0,
+                    "denominator": 0,
+                    "percentage": 0.0,
+                    "ratio": 0.0,
+                    "met": False
+                })
+        else:
+            result.update({
+                "processed_value": "-",
+                "numerator": 0,
+                "denominator": 0,
+                "percentage": 0.0,
+                "ratio": 0.0,
+                "met": False
+            })
     else:
         try:
             numeric_value = float(value) if value is not None else 0.0
@@ -125,22 +190,18 @@ def evaluate_metric(value: Any, definition: Dict[str, Any]) -> Dict[str, Any]:
     return result
 
 
-def compute_body_score(row: Dict[str, Any], weights: Dict[str, float], include_details: bool = False) -> Dict[str, Any]:
-    total_weight = 0.0
-    achieved_weight = 0.0
+def compute_score(row: Dict[str, Any], definitions: Dict[str, Any], include_details: bool = False) -> Dict[str, Any]:
+    """指定された基準(definitions)に基づいてスコアを計算"""
     met_items = 0
     details: List[Dict[str, Any]] = []
 
-    for field, definition in BODY_METRIC_DEFINITIONS.items():
-        weight = weights.get(field, 1.0)
-        total_weight += weight
-        metric_result = evaluate_metric(row.get(field), definition)
-        achieved_weight += metric_result["ratio"] * weight
+    for field, definition in definitions.items():
+        metric_result = evaluate_metric(row.get(field), definition, row=row)
         if metric_result["met"]:
             met_items += 1
 
         if include_details:
-            details.append({
+            detail_item = {
                 "key": field,
                 "label": definition["label"],
                 "value": metric_result["processed_value"],
@@ -148,22 +209,33 @@ def compute_body_score(row: Dict[str, Any], weights: Dict[str, float], include_d
                 "ratio": round(metric_result["ratio"], 2),
                 "met": metric_result["met"],
                 "type": definition["type"],
-                "weight": weight
-            })
+                "required": definition["required"]
+            }
+            # 割合型の場合は追加情報を含める
+            if definition.get("type") == "ratio":
+                detail_item["numerator"] = metric_result.get("numerator", 0)
+                detail_item["denominator"] = metric_result.get("denominator", 0)
+                detail_item["percentage"] = metric_result.get("percentage", 0.0)
+            details.append(detail_item)
 
-    percentage = (achieved_weight / total_weight) * 100 if total_weight else 0
+    total_items = len(definitions)
+    percentage = (met_items / total_items) * 100 if total_items > 0 else 0
+    
     return {
         "met_items": met_items,
-        "total_items": len(BODY_METRIC_DEFINITIONS),
+        "total_items": total_items,
         "percentage": round(percentage, 1),
-        "weighted_score": round(achieved_weight, 2),
-        "max_weighted_score": round(total_weight, 2),
         "details": details if include_details else None
     }
 
 
-def build_body_station_response(row: Dict[str, Any], weights: Dict[str, float], include_details: bool = False) -> Dict[str, Any]:
-    score = compute_body_score(row, weights, include_details=include_details)
+def build_station_response(row: Dict[str, Any], mode: str = 'body', include_details: bool = False) -> Dict[str, Any]:
+    """レスポンス用データの構築（モードで切り替え）"""
+    # モードに応じて評価基準を切り替える
+    definitions = HEARING_METRIC_DEFINITIONS if mode == 'hearing' else VISION_METRIC_DEFINITIONS if mode == 'vision' else BODY_METRIC_DEFINITIONS
+    
+    score = compute_score(row, definitions, include_details=include_details)
+    
     response = {
         "station_id": row.get("id"),
         "station_name": row.get("station_name"),
@@ -179,16 +251,130 @@ def build_body_station_response(row: Dict[str, Any], weights: Dict[str, float], 
         }
     }
     if include_details:
-        # metricsから"required"を除外
-        metrics_without_required = []
-        for metric in score["details"]:
-            metric_copy = {k: v for k, v in metric.items() if k != "required"}
-            metrics_without_required.append(metric_copy)
-        
-        response["metrics"] = metrics_without_required
-        response["score"]["weighted_score"] = score["weighted_score"]
-        response["score"]["max_weighted_score"] = score["max_weighted_score"]
+        response["metrics"] = score["details"]
     return response
+
+# ---------------------------------------------------------
+# ★これを新しく追加してください（共通の検索・取得ロジック）
+# ---------------------------------------------------------
+def get_stations_with_score(mode: str):
+    try:
+        # モードに応じた定義を選択
+        definitions = HEARING_METRIC_DEFINITIONS if mode == 'hearing' else VISION_METRIC_DEFINITIONS if mode == 'vision' else BODY_METRIC_DEFINITIONS
+        
+        keyword = request.args.get('keyword', default='', type=str).strip()
+        prefecture = request.args.get('prefecture', default=None, type=str)
+        line_name = request.args.get('line_name', default=None, type=str)
+        limit = request.args.get('limit', default=20, type=int)
+        offset = request.args.get('offset', default=0, type=int)
+        filters_param = request.args.get('filters', default=None, type=str)
+        sort_order = request.args.get('sort', default='none', type=str)
+
+        filter_list = []
+        if filters_param:
+            try:
+                filter_list = json.loads(filters_param)
+                if not isinstance(filter_list, list):
+                    filter_list = []
+            except json.JSONDecodeError:
+                filter_list = []
+
+        where_clause = "FROM stations WHERE 1=1"
+        params: List[Any] = []
+
+        if keyword:
+            where_clause += " AND station_name LIKE %s"
+            params.append(f"%{keyword}%")
+        if prefecture:
+            where_clause += " AND prefecture = %s"
+            params.append(prefecture)
+        if line_name:
+            search_line = line_name.replace('線', '')
+            if search_line.endswith('新幹'):
+                 pass 
+            where_clause += " AND line_name LIKE %s"
+            params.append(f"%{search_line}%")
+
+        # 定義に基づいてフィルタリング
+        for filter_key in filter_list:
+            if filter_key in definitions:
+                metric_def = definitions[filter_key]
+                if metric_def["type"] == "flag":
+                    where_clause += f" AND {filter_key} = %s"
+                    params.append(1)
+                elif metric_def["type"] == "ratio":
+                    # 割合型: 分子と分母の両方が存在し、割合が基準値以上であることを確認
+                    numerator_key = metric_def.get("numerator")
+                    denominator_key = metric_def.get("denominator")
+                    required_ratio = metric_def.get("required", 0.8)
+                    if numerator_key and denominator_key:
+                        # 分母が0より大きく、分子/分母 >= 基準値 の条件
+                        where_clause += f" AND {denominator_key} > 0 AND ({numerator_key} / NULLIF({denominator_key}, 0)) >= %s"
+                        params.append(required_ratio)
+                else:
+                    where_clause += f" AND {filter_key} > %s"
+                    params.append(0)
+
+        db = DatabaseConnection(**MYSQL_CONFIG)
+
+        # ソート処理変更前（ページごとにDBから取得）
+        # count_query = f"SELECT COUNT(*) as total {where_clause}"
+        # count_result = db.execute_query(count_query, tuple(params))
+        # total_count = count_result[0]['total'] if count_result else 0
+
+        # columns = ", ".join(BODY_QUERY_COLUMNS)
+        # query = f"SELECT {columns} {where_clause} ORDER BY station_name LIMIT %s OFFSET %s"
+        # data_params = params + [limit, offset]
+        # rows = db.execute_query(query, tuple(data_params))
+        # db.close()
+        # ここで mode を渡してレスポンスを作る
+        # data = [build_station_response(row, mode=mode, include_details=False) for row in rows]
+
+
+        # ソート処理変更後（全件取得してアプリ側でソート・ページング）
+        columns = ", ".join(BODY_QUERY_COLUMNS)
+        query = f"SELECT {columns} {where_clause} ORDER BY station_name"
+
+        rows = db.execute_query(query, tuple(params))
+        db.close()
+
+        all_data = [build_station_response(row, mode=mode, include_details=False) for row in rows]
+        total_count = len(all_data)
+
+        if sort_order == 'score-asc':
+            all_data.sort(key=lambda x: x['score']['percentage'])
+        elif sort_order == 'score-desc':
+            all_data.sort(key=lambda x: x['score']['percentage'], reverse=True)
+
+        start = offset
+        end = offset + limit
+        paged_data = all_data[start:end]
+
+        return jsonify({
+            "success": True,
+            "data": paged_data,
+            "count": len(paged_data),
+            "total_count": total_count
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+def get_station_detail_with_score(station_id: int, mode: str):
+    try:
+        columns = ", ".join(BODY_QUERY_COLUMNS)
+        query = f"SELECT {columns} FROM stations WHERE id = %s"
+        db = DatabaseConnection(**MYSQL_CONFIG)
+        rows = db.execute_query(query, (station_id,))
+        db.close()
+
+        if not rows:
+            return jsonify({"success": False, "error": "Station not found"}), 404
+
+        detail = build_station_response(rows[0], mode=mode, include_details=True)
+        return jsonify({"success": True, "data": detail})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @app.route('/api/stations', methods=['GET'])
@@ -359,105 +545,54 @@ def search_stations():
 
 
 @app.route('/api/body/stations', methods=['GET'])
-def get_body_accessible_stations():
-    """身体障害者向けスコア付きの駅一覧（修正版：全件数取得付き）"""
-    try:
-        keyword = request.args.get('keyword', default='', type=str).strip()
-        prefecture = request.args.get('prefecture', default=None, type=str)
-        limit = request.args.get('limit', default=20, type=int)
-        offset = request.args.get('offset', default=0, type=int)
-        weights_param = request.args.get('weights', default=None, type=str)
-        weights = parse_weight_payload(weights_param)
-        filters_param = request.args.get('filters', default=None, type=str)
-
-        # フィルタリストを取得
-        filter_list = []
-        if filters_param:
-            try:
-                filter_list = json.loads(filters_param)
-                if not isinstance(filter_list, list):
-                    filter_list = []
-            except json.JSONDecodeError:
-                filter_list = []
-
-        # --- クエリ構築の共通部分 ---
-        where_clause = "FROM stations WHERE 1=1"
-        params: List[Any] = []
-
-        if keyword:
-            where_clause += " AND station_name LIKE %s"
-            params.append(f"%{keyword}%")
-        if prefecture:
-            where_clause += " AND prefecture = %s"
-            params.append(prefecture)
-
-        for filter_key in filter_list:
-            if filter_key in BODY_METRIC_DEFINITIONS:
-                metric_def = BODY_METRIC_DEFINITIONS[filter_key]
-                if metric_def["type"] == "flag":
-                    where_clause += f" AND {filter_key} = %s"
-                    params.append(1)
-                else:
-                    where_clause += f" AND {filter_key} > %s"
-                    params.append(0)
-        # ---------------------------
-
-        db = DatabaseConnection(**MYSQL_CONFIG)
-
-        # 1. 全件数を取得（ページネーション計算用）
-        count_query = f"SELECT COUNT(*) as total {where_clause}"
-        count_result = db.execute_query(count_query, tuple(params))
-        total_count = count_result[0]['total'] if count_result else 0
-
-        # 2. データ本体を取得
-        columns = ", ".join(BODY_QUERY_COLUMNS)
-        query = f"SELECT {columns} {where_clause} ORDER BY station_name LIMIT %s OFFSET %s"
-        # LIMITとOFFSETをパラメータに追加
-        data_params = params + [limit, offset]
-        rows = db.execute_query(query, tuple(data_params))
-        
-        db.close()
-
-        data = [build_body_station_response(row, weights, include_details=False) for row in rows]
-
-        return jsonify({
-            "success": True,
-            "data": data,
-            "count": len(data),       # 取得したデータ数
-            "total_count": total_count # ★追加：全件数
-        })
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
-
-
+def get_body_stations():
+    return get_stations_with_score(mode='body')
+    
 @app.route('/api/body/stations/<int:station_id>', methods=['GET'])
-def get_body_accessible_station_detail(station_id: int):
-    """身体障害者向けスコアの詳細"""
+def get_body_detail(station_id: int):
+    return get_station_detail_with_score(station_id, mode='body')
+
+@app.route('/api/hearing/stations', methods=['GET'])
+def get_hearing_stations():
+    return get_stations_with_score(mode='hearing')
+
+@app.route('/api/hearing/stations/<int:station_id>', methods=['GET'])
+def get_hearing_detail(station_id):
+    return get_station_detail_with_score(station_id, mode='hearing')
+
+@app.route('/api/vision/stations', methods=['GET'])
+def get_vision_stations():
+    return get_stations_with_score(mode='vision')
+
+@app.route('/api/vision/stations/<int:station_id>', methods=['GET'])
+def get_vision_detail(station_id):
+    return get_station_detail_with_score(station_id, mode='vision')
+
+@app.route('/api/lines', methods=['GET'])
+def get_lines():
+    """路線名一覧を取得（プルダウン用）"""
     try:
-        weights_param = request.args.get('weights', default=None, type=str)
-        weights = parse_weight_payload(weights_param)
-
-        columns = ", ".join(BODY_QUERY_COLUMNS)
-        query = f"SELECT {columns} FROM stations WHERE id = %s"
-
         db = DatabaseConnection(**MYSQL_CONFIG)
-        rows = db.execute_query(query, (station_id,))
+
+        rows = db.execute_query(
+            "SELECT DISTINCT line_name FROM stations WHERE line_name IS NOT NULL AND line_name != ''"
+            )
         db.close()
-
-        if not rows:
-            return jsonify({
-                "success": False,
-                "error": "Station not found"
-            }), 404
-
-        detail = build_body_station_response(rows[0], weights, include_details=True)
-
+        
+        lines_set = set()
+        for row in rows:
+            line_val = row['line_name']
+            if line_val:
+                split_lines = line_val.split('・')
+                for line in split_lines:
+                    clean_line = line.strip()
+                    if clean_line:
+                        lines_set.add(clean_line)
+        
+        # 五十音順などでソートして返す
         return jsonify({
             "success": True,
-            "data": detail
+            "data": sorted(list(lines_set))
         })
     except Exception as e:
         return jsonify({

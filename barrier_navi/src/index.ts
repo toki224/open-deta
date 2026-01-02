@@ -15,8 +15,6 @@ interface BodyScoreSummary {
   total_items: number;
   percentage: number;
   label: string;
-  weighted_score?: number;
-  max_weighted_score?: number;
 }
 
 interface BodyStationSummary {
@@ -34,11 +32,9 @@ interface BodyMetricDetail {
   label: string;
   value: number | string | null;
   raw_value: number | string | null;
-  required: number;
   ratio: number;
   met: boolean;
   type: string;
-  weight: number;
 }
 
 interface BodyStationDetail extends BodyStationSummary {
@@ -49,27 +45,50 @@ interface BodyMetricDefinition {
   key: string;
   label: string;
   required: number;
-  type: 'flag' | 'number';
+  type: 'flag' | 'number' | 'ratio';
 }
 
 const BODY_METRICS: BodyMetricDefinition[] = [
+  // フラグ型（〇×で表せる項目）：設置されていれば1点
   { key: 'step_response_status', label: '段差への対応', required: 1, type: 'flag' },
   { key: 'has_guidance_system', label: '案内設備の設置の有無', required: 1, type: 'flag' },
   { key: 'has_accessible_restroom', label: '障害者対応型便所の設置の有無', required: 1, type: 'flag' },
   { key: 'has_accessible_gate', label: '障害者対応型改札口の設置の有無', required: 1, type: 'flag' },
   { key: 'has_fall_prevention', label: '転落防止のための設備の設置の有無', required: 1, type: 'flag' },
-  { key: 'num_platforms', label: 'プラットホームの有無', required: 6, type: 'number' },
-  { key: 'num_step_free_platforms', label: '段差が解消されているプラットホームの有無', required: 6, type: 'number' },
-  { key: 'num_elevators', label: 'エレベーターの有無', required: 4, type: 'number' },
-  { key: 'num_compliant_elevators', label: '適合エレベーターの有無', required: 4, type: 'number' },
-  { key: 'num_escalators', label: 'エスカレーターの有無', required: 4, type: 'number' },
-  { key: 'num_compliant_escalators', label: '適合エスカレーターの有無', required: 4, type: 'number' },
-  { key: 'num_other_lifts', label: 'その他の昇降機の有無', required: 2, type: 'number' },
-  { key: 'num_slopes', label: '傾斜路の有無', required: 2, type: 'number' },
-  { key: 'num_compliant_slopes', label: '移動等円滑化基準に適合している傾斜路の有無', required: 2, type: 'number' },
+  // 割合型（分子/分母の形式で表示、基準値以上の割合であれば1点）
+  { key: 'platform_ratio', label: '段差が解消されているプラットホームの割合', required: 0.8, type: 'ratio' },
+  { key: 'elevator_ratio', label: '移動等円滑化基準に適合しているエレベーターの割合', required: 0.8, type: 'ratio' },
+  { key: 'escalator_ratio', label: '移動等円滑化基準に適合しているエスカレーターの割合', required: 0.8, type: 'ratio' },
+  // 数値型（基準値以上であれば1点、未満なら0点）
+  { key: 'num_other_lifts', label: 'その他の昇降機の設置の有無', required: 2, type: 'number' },
+  { key: 'num_slopes', label: '傾斜路の設置の有無', required: 2, type: 'number' },
+  { key: 'num_compliant_slopes', label: '移動等円滑化基準に適合している傾斜路の設置の有無', required: 2, type: 'number' },
   { key: 'num_wheelchair_accessible_platforms', label: '車いす使用者の円滑な乗降が可能なプラットホームの有無', required: 6, type: 'number' }
 ];
 
+const HEARING_METRICS: BodyMetricDefinition[] = [
+  // フラグ型（〇×で表せる項目）：設置されていれば1点
+  { key: 'has_guidance_system', label: '案内設備の設置の有無', required: 1, type: 'flag' },
+  { key: 'has_accessible_restroom', label: '障害者対応型便所の設置の有無', required: 1, type: 'flag' },
+  { key: 'has_accessible_gate', label: '障害者対応型改札口の設置の有無', required: 1, type: 'flag' },
+  { key: 'has_fall_prevention', label: '転落防止のための設備の設置の有無', required: 1, type: 'flag' }
+];
+
+const VISION_METRICS: BodyMetricDefinition[] = [
+  // フラグ型（〇×で表せる項目）：設置されていれば1点
+  { key: 'step_response_status', label: '段差への対応', required: 1, type: 'flag' },
+  { key: 'has_tactile_paving', label: '視覚障害者誘導用ブロックの設置の有無', required: 1, type: 'flag' },
+  { key: 'has_guidance_system', label: '案内設備の設置の有無', required: 1, type: 'flag' },
+  { key: 'has_accessible_restroom', label: '障害者対応型便所の設置の有無', required: 1, type: 'flag' },
+  { key: 'has_accessible_gate', label: '障害者対応型改札口の設置の有無', required: 1, type: 'flag' },
+  { key: 'has_fall_prevention', label: '転落防止のための設備の設置の有無', required: 1, type: 'flag' },
+  // 割合型（分子/分母の形式で表示、基準値以上の割合であれば1点）
+  { key: 'platform_ratio', label: '段差が解消されているプラットホームの割合', required: 0.8, type: 'ratio' },
+  // 数値型（基準値以上であれば1点、未満なら0点）
+  { key: 'num_compliant_elevators', label: '移動等円滑化基準に適合しているエレベーターの設置の有無', required: 4, type: 'number' },
+  { key: 'num_compliant_escalators', label: '移動等円滑化基準に適合しているエスカレーターの設置の有無', required: 4, type: 'number' },
+  { key: 'num_compliant_slopes', label: '移動等円滑化基準に適合している傾斜路の設置の有無', required: 2, type: 'number' },
+];
 
 class StationApp {
   private apiBaseUrl = 'http://localhost:5000/api';
@@ -81,8 +100,25 @@ class StationApp {
   private totalCount = 0; // ★追加：全件数を保存
   private selectedFilters: string[] = [];
   private sortOrder: 'none' | 'score-asc' | 'score-desc' = 'none';
+  private currentMode: 'body' | 'hearing' | 'vision' = 'body';
+  private currentMetrics: BodyMetricDefinition[];
 
   constructor() {
+    const mode = document.body.dataset.mode;
+
+    if (mode === 'hearing') {
+      this.currentMode = 'hearing';
+      this.currentMetrics = HEARING_METRICS;
+    } 
+    else if (mode === 'vision') {
+      this.currentMode = 'vision';
+      this.currentMetrics = VISION_METRICS;
+    } else {
+      this.currentMode = 'body';
+      this.currentMetrics = BODY_METRICS;
+    }
+
+
     this.init();
   }
 
@@ -90,6 +126,7 @@ class StationApp {
     this.renderFilterControls();
     this.setupEventListeners();
     await this.loadPrefectures();
+    await this.fetchLines();
     await this.loadStations();
   }
 
@@ -98,7 +135,7 @@ class StationApp {
     if (!container) return;
     container.innerHTML = '';
 
-    BODY_METRICS.forEach((metric) => {
+    this.currentMetrics.forEach((metric) => {
       const item = document.createElement('div');
       item.className = 'filter-item';
 
@@ -137,6 +174,8 @@ class StationApp {
 
     const filterButton = document.getElementById('apply-filter-btn') as HTMLButtonElement | null;
     const resetButton = document.getElementById('reset-filter-btn') as HTMLButtonElement | null;
+
+    const lineSelect = document.getElementById('line-select') as HTMLSelectElement | null;
 
     searchButton?.addEventListener('click', () => this.applySearch());
     searchInput?.addEventListener('keypress', (event) => {
@@ -191,6 +230,11 @@ class StationApp {
     resetButton?.addEventListener('click', () => {
       this.resetFilters();
     });
+
+    lineSelect?.addEventListener('change', () => {
+      this.currentPage = 1;
+      this.loadStations();
+    });
   }
 
   private applySearch(): void {
@@ -229,9 +273,15 @@ class StationApp {
       this.sortOrder = 'none';
     }
 
+    const lineSelect = document.getElementById('line-select') as HTMLSelectElement | null;
+    if (lineSelect) {
+      lineSelect.value = '';
+    }
+
     // ページをリセットして再読み込み
     this.currentPage = 1;
     this.loadStations();
+
   }
 
   private collectFilters(): string[] {
@@ -280,33 +330,58 @@ class StationApp {
     this.selectedFilters = this.collectFilters();
     const params = new URLSearchParams({
       limit: this.pageSize.toString(),
-      offset: ((this.currentPage - 1) * this.pageSize).toString()
+      offset: ((this.currentPage - 1) * this.pageSize).toString(),
+      sort: this.sortOrder
     });
 
     if (this.selectedPrefecture) params.append('prefecture', this.selectedPrefecture);
     if (this.keyword) params.append('keyword', this.keyword);
+
     if (this.selectedFilters.length > 0) {
       params.append('filters', JSON.stringify(this.selectedFilters));
     }
 
-    const response = await this.fetchApi<BodyStationSummary[]>(`/body/stations?${params.toString()}`);
+    const lineSelect = document.getElementById('line-select') as HTMLSelectElement | null;
+    if (lineSelect && lineSelect.value) {
+        params.append('line_name', lineSelect.value);
+    }
+
+    const apiPath = this.currentMode === 'hearing' ? '/hearing/stations' : this.currentMode === 'vision' ? '/vision/stations' : '/body/stations';
+
+    const response = await this.fetchApi<BodyStationSummary[]>(`${apiPath}?${params.toString()}`);
 
     if (loadingIndicator) loadingIndicator.style.display = 'none';
 
-    if (response.success && response.data) {
-      let sortedData = [...response.data];
+    // sortロジック変更前の表示部分
+    // if (response.success && response.data) {
+    //   let sortedData = [...response.data];
       
-      // ソートを適用
-      if (this.sortOrder === 'score-asc') {
-        sortedData.sort((a, b) => a.score.percentage - b.score.percentage);
-      } else if (this.sortOrder === 'score-desc') {
-        sortedData.sort((a, b) => b.score.percentage - a.score.percentage);
-      }
+    //   // ソートを適用
+    //   if (this.sortOrder === 'score-asc') {
+    //     sortedData.sort((a, b) => a.score.percentage - b.score.percentage);
+    //   } else if (this.sortOrder === 'score-desc') {
+    //     sortedData.sort((a, b) => b.score.percentage - a.score.percentage);
+    //   }
       
-      this.lastResultCount = sortedData.length;
-      this.totalCount = response.total_count || 0; // ★追加: 全件数を保存
+    //   this.lastResultCount = sortedData.length;
+    //   this.totalCount = response.total_count || 0; // ★追加: 全件数を保存
 
-      this.renderStationCards(sortedData);
+    //   this.renderStationCards(sortedData);
+    //   this.updatePagination();
+    //   this.updateActiveFilters();
+    // } else if (stationsContainer) {
+    //   stationsContainer.innerHTML = `<p class="error">データの取得に失敗しました: ${response.error}</p>`;
+    // }
+
+    // sortロジック変更後の表示部分
+    if (response.success && response.data) {
+      
+      const stationData = response.data;
+      
+      this.lastResultCount = stationData.length;
+      this.totalCount = response.total_count || 0;
+
+      this.renderStationCards(stationData);
       this.updatePagination();
       this.updateActiveFilters();
     } else if (stationsContainer) {
@@ -372,7 +447,7 @@ class StationApp {
       const chipsContainer = section.querySelector('.filter-chips');
       
       this.selectedFilters.forEach((filterKey) => {
-        const metric = BODY_METRICS.find(m => m.key === filterKey);
+        const metric = this.currentMetrics.find(m => m.key === filterKey);
         if (!metric) return;
 
         const chip = document.createElement('div');
@@ -480,6 +555,7 @@ class StationApp {
   private navigateToDetail(stationId: number): void {
     const url = new URL('detail.html', window.location.href);
     url.searchParams.set('stationId', stationId.toString());
+    url.searchParams.set('mode', this.currentMode);
     window.location.href = url.toString();
   }
 
@@ -488,6 +564,31 @@ class StationApp {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  private async fetchLines(): Promise<void> {
+      const lineSelect = document.getElementById('line-select') as HTMLSelectElement;
+      if (!lineSelect) return;
+
+      try {
+          const res = await fetch('http://localhost:5000/api/lines');
+          const json = await res.json();
+
+          if (json.success) {
+              
+              lineSelect.innerHTML = '<option value="">指定なし</option>';
+
+              
+              json.data.forEach((line: string) => {
+                  const option = document.createElement('option');
+                  option.value = line;
+                  option.textContent = line;
+                  lineSelect.appendChild(option);
+              });
+          }
+      } catch (error) {
+          console.error('Failed to fetch lines:', error);
+      }
   }
 }
 

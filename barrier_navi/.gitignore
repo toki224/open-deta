@@ -30,3 +30,5 @@ Thumbs.db
 *.tmp
 *.bak
 
+#node modules
+node_modules/

@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>バリアナビ｜詳細</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="../styles.css">
 </head>
 <body>
     <div class="app-shell">
         <section class="detail-panel detail-page">
             <div class="detail-header">
                 <div>
-                    <a class="ghost-btn" href="index.html">← 一覧へ戻る</a>
+                    <a id="back_btn" class="ghost-btn" href="index.html">← 一覧へ戻る</a>
                 </div>
                 <h1 id="detail-title">詳細</h1>
             </div>
@@ -27,17 +27,18 @@
                         <tr>
                             <th>項目</th>
                             <th>設置の有無と数</th>
+                            <th>基準値</th>
                         </tr>
                     </thead>
                     <tbody id="detail-table-body">
-                        <tr><td colspan="2" style="text-align:center;">読み込み中...</td></tr>
+                        <tr><td colspan="3" style="text-align:center;">読み込み中...</td></tr>
                     </tbody>
                 </table>
             </div>
         </section>
     </div>
 
-    <script src="dist/detail.js"></script>
+    <script src="../dist/detail.js"></script>
 </body>
 </html>
 

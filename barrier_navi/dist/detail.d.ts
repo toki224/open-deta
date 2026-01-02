@@ -13,9 +13,14 @@ interface DetailMetric {
     key: string;
     label: string;
     value: number | string | null;
+    raw_value: number | string | null;
     required: number;
     ratio: number;
     met: boolean;
+    type: string;
+    numerator?: number;
+    denominator?: number;
+    percentage?: number;
 }
 interface DetailStation {
     station_id: number;
@@ -33,7 +38,9 @@ declare class DetailPage {
     private scoreEl;
     private metaEl;
     private tableBodyEl;
+    private currentMode;
     constructor();
+    private setupBackButton;
     private load;
     private fetchApi;
     private renderDetail;
