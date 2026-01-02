@@ -19,7 +19,7 @@ class ProfilePage {
         const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
         const userId = localStorage.getItem('userId');
         if (!isLoggedIn || !userId) {
-            window.location.href = 'login.html';
+            window.location.href = '/login';
             return;
         }
         this.userId = userId;
@@ -28,13 +28,13 @@ class ProfilePage {
         // 戻るボタン
         const backBtn = document.getElementById('back-btn');
         backBtn?.addEventListener('click', () => {
-            window.location.href = 'home.html';
+            window.location.href = '/home';
         });
         // キャンセルボタン
         const cancelBtn = document.getElementById('cancel-btn');
         cancelBtn?.addEventListener('click', () => {
             if (confirm('変更を破棄しますか？')) {
-                window.location.href = 'home.html';
+                window.location.href = '/home';
             }
         });
         // フォーム送信
@@ -59,6 +59,44 @@ class ProfilePage {
                 !results.contains(e.target) &&
                 !input.contains(e.target)) {
                 this.hideStationSearchResults();
+            }
+        });
+        // お気に入り駅の削除ボタン（イベント委譲を使用）
+        const favoriteStationsList = document.getElementById('favorite-stations-list');
+        favoriteStationsList?.addEventListener('click', (e) => {
+            const target = e.target;
+            if (target.classList.contains('remove-station-btn')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const btn = target;
+                const stationIdAttr = btn.getAttribute('data-station-id');
+                const stationIndexAttr = btn.getAttribute('data-station-index');
+                const stationId = stationIdAttr ? parseInt(stationIdAttr) : 0;
+                const stationIndex = stationIndexAttr ? parseInt(stationIndexAttr) : -1;
+                console.log('Delete button clicked (delegated), stationId:', stationId, 'index:', stationIndex);
+                // インデックスが有効な場合は、インデックスで削除（最も確実）
+                if (!isNaN(stationIndex) && stationIndex >= 0 && stationIndex < this.favoriteStations.length) {
+                    console.log('Removing station by index:', stationIndex);
+                    this.favoriteStations.splice(stationIndex, 1);
+                    this.renderFavoriteStations();
+                    return;
+                }
+                // 駅IDが有効な場合は、IDで削除
+                if (!isNaN(stationId) && stationId > 0) {
+                    console.log('Removing station by ID:', stationId);
+                    this.removeFavoriteStation(stationId);
+                    return;
+                }
+                // 駅名で削除を試みる（フォールバック）
+                const stationItem = btn.closest('.favorite-station-item');
+                if (stationItem) {
+                    let stationName = stationItem.querySelector('.station-name')?.textContent || '';
+                    stationName = stationName.replace(/^駅ID:\s*/, '').trim();
+                    console.log('Removing station by name:', stationName);
+                    if (stationName) {
+                        this.removeFavoriteStationByName(stationName);
+                    }
+                }
             }
         });
     }
@@ -129,7 +167,20 @@ class ProfilePage {
         this.renderFavoriteStations();
     }
     removeFavoriteStation(stationId) {
+        console.log('Before remove:', this.favoriteStations.length);
         this.favoriteStations = this.favoriteStations.filter(fav => fav.id !== stationId);
+        console.log('After remove:', this.favoriteStations.length);
+        this.renderFavoriteStations();
+    }
+    removeFavoriteStationByName(stationName) {
+        console.log('Before remove by name:', this.favoriteStations.length, 'name:', stationName);
+        // 駅名が「駅ID: X」の形式の場合も考慮して削除
+        const cleanStationName = stationName.replace(/^駅ID:\s*/, '').trim();
+        this.favoriteStations = this.favoriteStations.filter(fav => {
+            const cleanFavName = fav.name.replace(/^駅ID:\s*/, '').trim();
+            return cleanFavName !== cleanStationName && fav.name !== stationName;
+        });
+        console.log('After remove by name:', this.favoriteStations.length);
         this.renderFavoriteStations();
     }
     renderFavoriteStations() {
@@ -140,21 +191,14 @@ class ProfilePage {
             container.innerHTML = '<p class="empty-message">お気に入りの駅が登録されていません</p>';
             return;
         }
-        container.innerHTML = this.favoriteStations.map(fav => `
-      <div class="favorite-station-item">
+        container.innerHTML = this.favoriteStations.map((fav, index) => `
+      <div class="favorite-station-item" data-station-index="${index}">
         <span class="station-name">${this.escapeHtml(fav.name)}</span>
-        <button type="button" class="remove-station-btn" data-station-id="${fav.id}">削除</button>
+        <button type="button" class="remove-station-btn" data-station-id="${fav.id}" data-station-index="${index}">削除</button>
       </div>
     `).join('');
-        // 削除ボタンのイベントを追加
-        container.querySelectorAll('.remove-station-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const stationId = parseInt(btn.getAttribute('data-station-id') || '0');
-                if (stationId) {
-                    this.removeFavoriteStation(stationId);
-                }
-            });
-        });
+        // イベント委譲を使用しているため、ここで個別にイベントハンドラーを追加する必要はない
+        // setupEventListeners()で設定済み
     }
     async loadProfile() {
         const loadingEl = document.getElementById('loading');
@@ -233,18 +277,22 @@ class ProfilePage {
                 select.value = data.disability_type[0];
             }
         }
-        // お気に入りの駅
+        // お気に入りの駅（APIからは駅IDの配列が返される）
         if (data.favorite_stations && Array.isArray(data.favorite_stations) && data.favorite_stations.length > 0) {
-            // 駅IDから駅名を取得する必要がある
-            // 簡易的にIDのみ保存し、読み込み時に駅名を取得
-            this.favoriteStations = data.favorite_stations.map(id => ({ id, name: `駅ID: ${id}` }));
-            // 駅名を取得して更新
-            this.loadFavoriteStationNames(data.favorite_stations);
+            // APIから駅IDの配列が返されるので、駅IDから駅名を取得して表示用に使用
+            const stationIds = data.favorite_stations.map(id => parseInt(String(id))).filter(id => !isNaN(id) && id > 0);
+            if (stationIds.length > 0) {
+                this.loadFavoriteStationNamesFromIds(stationIds);
+            }
+            else {
+                this.favoriteStations = [];
+                this.renderFavoriteStations();
+            }
         }
         else {
             this.favoriteStations = [];
+            this.renderFavoriteStations();
         }
-        this.renderFavoriteStations();
         // 優先したい機能
         if (data.preferred_features && Array.isArray(data.preferred_features)) {
             data.preferred_features.forEach(feature => {
@@ -254,7 +302,7 @@ class ProfilePage {
             });
         }
     }
-    async loadFavoriteStationNames(stationIds) {
+    async loadFavoriteStationNamesFromIds(stationIds) {
         // 各駅IDから駅名を取得
         const stations = [];
         for (const id of stationIds) {
@@ -262,12 +310,51 @@ class ProfilePage {
                 const response = await fetch(`${this.apiBaseUrl}/stations/${id}`);
                 const data = await response.json();
                 if (data.success && data.data) {
-                    stations.push({ id, name: data.data.station_name });
+                    stations.push({ id: data.data.id, name: data.data.station_name });
+                }
+                else {
+                    console.warn(`Station not found: ${id}`);
+                    stations.push({ id, name: `駅ID: ${id}` });
                 }
             }
             catch (error) {
                 console.error(`Failed to load station ${id}:`, error);
                 stations.push({ id, name: `駅ID: ${id}` });
+            }
+        }
+        this.favoriteStations = stations;
+        this.renderFavoriteStations();
+    }
+    async loadFavoriteStationNamesFromNames(stationNames) {
+        // 各駅名から駅IDを取得（完全一致で検索）
+        const stations = [];
+        for (const name of stationNames) {
+            // 「駅ID: X」の形式の場合は除去して駅名のみを使用
+            const cleanName = name.replace(/^駅ID:\s*/, '').trim();
+            // 駅名から駅IDを検索（完全一致）
+            try {
+                const response = await fetch(`${this.apiBaseUrl}/stations/search?keyword=${encodeURIComponent(cleanName)}&limit=50`);
+                const data = await response.json();
+                if (data.success && data.data && data.data.length > 0) {
+                    // 完全一致する駅を探す
+                    const exactMatch = data.data.find(station => station.station_name === cleanName);
+                    if (exactMatch) {
+                        stations.push({ id: exactMatch.id, name: exactMatch.station_name });
+                    }
+                    else {
+                        // 完全一致が見つからない場合は最初の1件を使用
+                        stations.push({ id: data.data[0].id, name: data.data[0].station_name });
+                    }
+                }
+                else {
+                    // 見つからない場合は駅名のみを使用（IDは0、「駅ID:」プレフィックスなしで表示）
+                    console.warn(`Station not found: ${cleanName}`);
+                    stations.push({ id: 0, name: cleanName });
+                }
+            }
+            catch (error) {
+                console.error(`Failed to load station ${cleanName}:`, error);
+                stations.push({ id: 0, name: cleanName });
             }
         }
         this.favoriteStations = stations;
@@ -287,14 +374,17 @@ class ProfilePage {
         const disabilitySelect = document.getElementById('disability_type');
         const selectedDisability = disabilitySelect?.value || '';
         const disabilityTypes = selectedDisability ? [selectedDisability] : [];
-        const favoriteStationIds = this.favoriteStations.map(fav => fav.id);
+        // 駅IDが0のもの（駅名からIDを取得できなかったもの）を除外
+        const favoriteStationIds = this.favoriteStations
+            .map(fav => fav.id)
+            .filter(id => id > 0);
         const featureCheckboxes = document.querySelectorAll('input[name="preferred_features"]:checked');
         const preferredFeatures = Array.from(featureCheckboxes).map(cb => cb.value);
         const profileData = {
             username: username.trim(),
-            disability_type: disabilityTypes.length > 0 ? disabilityTypes : undefined,
-            favorite_stations: favoriteStationIds.length > 0 ? favoriteStationIds : undefined,
-            preferred_features: preferredFeatures.length > 0 ? preferredFeatures : undefined,
+            disability_type: disabilityTypes.length > 0 ? disabilityTypes : [],
+            favorite_stations: favoriteStationIds, // 空の配列でも明示的に送信（削除を反映するため）
+            preferred_features: preferredFeatures, // 空の配列でも明示的に送信（全てのチェックを外した場合に対応）
         };
         // APIに送信
         await this.saveProfile(profileData);
@@ -335,7 +425,7 @@ class ProfilePage {
                 }
                 // 1秒後にhome画面にリダイレクト
                 setTimeout(() => {
-                    window.location.href = 'home.html';
+                    window.location.href = '/home';
                 }, 1000);
             }
             else {

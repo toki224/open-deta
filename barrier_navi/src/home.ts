@@ -18,7 +18,7 @@ class HomePage {
     const isGuest = localStorage.getItem('isGuest') === 'true';
     
     if (!isLoggedIn && !isGuest) {
-      window.location.href = 'login.html';
+      window.location.href = 'view/login.html';
     }
   }
 
@@ -104,7 +104,7 @@ class HomePage {
 
   private handleProfile(): void {
     // プロフィール画面への遷移
-    window.location.href = 'profile.html';
+    window.location.href = '/profile';
   }
 
   private handleLogout(): void {
@@ -114,7 +114,7 @@ class HomePage {
       localStorage.removeItem('username');
       localStorage.removeItem('rememberMe');
       localStorage.removeItem('userId');
-      window.location.href = 'login.html';
+      window.location.href = 'view/login.html';
     }
   }
 

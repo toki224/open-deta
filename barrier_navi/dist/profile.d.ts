@@ -34,11 +34,13 @@ declare class ProfilePage {
     private hideStationSearchResults;
     private addFavoriteStation;
     private removeFavoriteStation;
+    private removeFavoriteStationByName;
     private renderFavoriteStations;
     private loadProfile;
     private loadUserInfo;
     private populateForm;
-    private loadFavoriteStationNames;
+    private loadFavoriteStationNamesFromIds;
+    private loadFavoriteStationNamesFromNames;
     private handleSubmit;
     private saveProfile;
     private showError;

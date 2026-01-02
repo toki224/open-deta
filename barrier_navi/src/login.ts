@@ -24,7 +24,7 @@ class LoginPage {
       const isGuest = localStorage.getItem('isGuest') === 'true';
       
       if (isLoggedIn || isGuest) {
-        window.location.href = 'home.html';
+        window.location.href = 'view/home.html';
       }
     }
   }
@@ -106,7 +106,7 @@ class LoginPage {
         if (response.user?.email) {
           localStorage.setItem('userEmail', response.user.email);
         }
-        window.location.href = 'home.html';
+        window.location.href = 'view/home.html';
       } else {
         // ログイン失敗
         this.showError(errorMessage, response.error || 'ログインに失敗しました');
@@ -147,7 +147,7 @@ class LoginPage {
   private handleGuestLogin(): void {
     localStorage.setItem('isGuest', 'true');
     localStorage.setItem('username', 'ゲスト');
-    window.location.href = 'home.html';
+    window.location.href = 'view/home.html';
   }
 
   private showSignupModal(): void {

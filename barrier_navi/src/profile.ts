@@ -44,7 +44,7 @@ class ProfilePage {
     const userId = localStorage.getItem('userId');
     
     if (!isLoggedIn || !userId) {
-      window.location.href = 'login.html';
+      window.location.href = '/login';
       return;
     }
     
@@ -55,14 +55,14 @@ class ProfilePage {
     // 戻るボタン
     const backBtn = document.getElementById('back-btn');
     backBtn?.addEventListener('click', () => {
-      window.location.href = 'home.html';
+      window.location.href = '/home';
     });
 
     // キャンセルボタン
     const cancelBtn = document.getElementById('cancel-btn');
     cancelBtn?.addEventListener('click', () => {
       if (confirm('変更を破棄しますか？')) {
-        window.location.href = 'home.html';
+        window.location.href = '/home';
       }
     });
 
@@ -489,7 +489,7 @@ class ProfilePage {
         
         // 1秒後にhome画面にリダイレクト
         setTimeout(() => {
-          window.location.href = 'home.html';
+          window.location.href = '/home';
         }, 1000);
       } else {
         this.showError(result.error || 'プロフィールの保存に失敗しました');

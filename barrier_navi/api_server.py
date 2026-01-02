@@ -606,37 +606,37 @@ def get_lines():
 @app.route('/')
 def index():
     """ルートパスでログイン画面を表示"""
-    return send_file('login.html')
+    return send_file(os.path.join(os.path.dirname(__file__), 'view', 'login.html'))
 
 @app.route('/login')
 def login_page():
     """ログイン画面"""
-    return send_file('login.html')
+    return send_file(os.path.join(os.path.dirname(__file__), 'view', 'login.html'))
 
 @app.route('/home')
 def home_page():
     """ホーム画面"""
-    return send_file('home.html')
+    return send_file(os.path.join(os.path.dirname(__file__), 'view', 'home.html'))
 
 @app.route('/index')
 def index_page():
     """一覧画面"""
-    return send_file('index.html')
+    return send_file(os.path.join(os.path.dirname(__file__), 'view', 'index.html'))
 
 @app.route('/profile')
 def profile_page():
     """プロフィール画面"""
-    return send_file('profile.html')
+    return send_file(os.path.join(os.path.dirname(__file__), 'view', 'profile.html'))
 
 @app.route('/detail')
 def detail_page():
     """詳細画面"""
-    return send_file('detail.html')
+    return send_file(os.path.join(os.path.dirname(__file__), 'view', 'detail.html'))
 
 @app.route('/styles.css')
 def styles_css():
     """CSSファイル"""
-    return send_file('styles.css')
+    return send_file(os.path.join(os.path.dirname(__file__), 'styles.css'))
 
 @app.route('/dist/<path:filename>')
 def dist_files(filename):

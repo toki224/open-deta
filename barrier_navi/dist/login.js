@@ -19,7 +19,7 @@ class LoginPage {
             const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
             const isGuest = localStorage.getItem('isGuest') === 'true';
             if (isLoggedIn || isGuest) {
-                window.location.href = 'home.html';
+                window.location.href = 'view/home.html';
             }
         }
     }
@@ -89,7 +89,7 @@ class LoginPage {
                 if (response.user?.email) {
                     localStorage.setItem('userEmail', response.user.email);
                 }
-                window.location.href = 'home.html';
+                window.location.href = 'view/home.html';
             }
             else {
                 // ログイン失敗
@@ -130,7 +130,7 @@ class LoginPage {
     handleGuestLogin() {
         localStorage.setItem('isGuest', 'true');
         localStorage.setItem('username', 'ゲスト');
-        window.location.href = 'home.html';
+        window.location.href = 'view/home.html';
     }
     showSignupModal() {
         const modal = document.getElementById('signup-modal');
