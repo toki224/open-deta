@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>バリアナビ - ログイン</title>
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+    <div class="app-shell">
+        <header class="home-header">
+            <h1>バリアナビ</h1>
+            <p>駅のバリアフリー情報を確認できます</p>
+        </header>
+
+        <main class="home-main">
+            <section class="home-panel">
+                <div class="panel-header">
+                    <h2>ログイン</h2>
+                    <p>アカウントにログインするか、ゲストとして利用してください</p>
+                </div>
+
+                <form id="login-form" class="login-form">
+                    <div class="form-group">
+                        <label for="username">ユーザー名</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">パスワード</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">ログイン</button>
+                        <button type="button" id="guest-btn" class="btn btn-secondary">ゲストとして利用</button>
+                    </div>
+                </form>
+
+                <div id="error-message" class="error-message" style="display: none;"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="../dist/login.js"></script>
+</body>
+</html>
+
+

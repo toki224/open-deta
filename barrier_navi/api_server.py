@@ -7,18 +7,19 @@ import os
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory, send_file
 from flask_cors import CORS
 from dotenv import load_dotenv
 from database_connection import DatabaseConnection
 import bcrypt
+import os
 
 # .envファイルから環境変数を読み込む
 # 明示的にパスを指定（api_server.pyと同じディレクトリの.envを読み込む）
 env_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path=env_path)
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)  # CORSを有効化してフロントエンドからのアクセスを許可
 
 # MySQL接続情報（環境変数から取得）
@@ -464,6 +465,48 @@ def get_body_accessible_station_detail(station_id: int):
             "error": str(e)
         }), 500
 
+
+# ==================== 静的ファイル提供 ====================
+
+@app.route('/')
+def index():
+    """ルートパスでログイン画面を表示"""
+    return send_file('login.html')
+
+@app.route('/login')
+def login_page():
+    """ログイン画面"""
+    return send_file('login.html')
+
+@app.route('/home')
+def home_page():
+    """ホーム画面"""
+    return send_file('home.html')
+
+@app.route('/index')
+def index_page():
+    """一覧画面"""
+    return send_file('index.html')
+
+@app.route('/profile')
+def profile_page():
+    """プロフィール画面"""
+    return send_file('profile.html')
+
+@app.route('/detail')
+def detail_page():
+    """詳細画面"""
+    return send_file('detail.html')
+
+@app.route('/styles.css')
+def styles_css():
+    """CSSファイル"""
+    return send_file('styles.css')
+
+@app.route('/dist/<path:filename>')
+def dist_files(filename):
+    """distディレクトリ内のファイル（JS、CSS等）"""
+    return send_from_directory('dist', filename)
 
 # ==================== 認証関連API ====================
 

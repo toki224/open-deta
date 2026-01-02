@@ -249,50 +249,6 @@ class ProfilePage {
 
     // イベント委譲を使用しているため、ここで個別にイベントハンドラーを追加する必要はない
     // setupEventListeners()で設定済み
-    /*
-    container.querySelectorAll('.remove-station-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const stationId = parseInt(btn.getAttribute('data-station-id') || '0');
-        const stationIndex = parseInt(btn.getAttribute('data-station-index') || '-1');
-        
-        console.log('Delete button clicked, stationId:', stationId, 'index:', stationIndex);
-        console.log('Current favoriteStations:', this.favoriteStations);
-        
-        // インデックスが有効な場合は、インデックスで削除（最も確実）
-        if (stationIndex >= 0 && stationIndex < this.favoriteStations.length) {
-          console.log('Removing station by index:', stationIndex);
-          this.favoriteStations.splice(stationIndex, 1);
-          this.renderFavoriteStations();
-          return; // 削除成功したら終了
-        }
-        
-        // 駅IDが有効な場合は、IDで削除
-        if (stationId > 0) {
-          console.log('Removing station by ID:', stationId);
-          this.removeFavoriteStation(stationId);
-          return; // 削除成功したら終了
-        }
-        
-        // 駅名で削除を試みる（フォールバック）
-        const stationItem = btn.closest('.favorite-station-item');
-        if (stationItem) {
-          let stationName = stationItem.querySelector('.station-name')?.textContent || '';
-          // 「駅ID:」のプレフィックスを除去
-          stationName = stationName.replace(/^駅ID:\s*/, '').trim();
-          console.log('Removing station by name:', stationName);
-          if (stationName) {
-            this.removeFavoriteStationByName(stationName);
-          } else {
-            console.warn('Could not determine station to remove');
-          }
-        } else {
-          console.warn('Could not find station item element');
-        }
-      });
-    });
   }
 
   private async loadProfile(): Promise<void> {

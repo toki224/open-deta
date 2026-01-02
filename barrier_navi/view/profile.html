@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>バリアナビ - プロフィール</title>
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+    <div class="app-shell">
+        <header class="home-header">
+            <h1>バリアナビ</h1>
+            <p>プロフィール</p>
+        </header>
+
+        <main class="home-main">
+            <section class="home-panel">
+                <div class="panel-header">
+                    <h2>プロフィール</h2>
+                </div>
+
+                <div id="profile-content" class="profile-content">
+                    <div class="profile-info">
+                        <p id="username-display">ユーザー名: <span id="username-value">-</span></p>
+                        <p id="login-status">ログイン状態: <span id="status-value">-</span></p>
+                    </div>
+
+                    <div class="form-actions">
+                        <button id="logout-btn" class="btn btn-primary">ログアウト</button>
+                        <button id="back-btn" class="btn btn-secondary">ホームに戻る</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="../dist/profile.js"></script>
+</body>
+</html>
+
+
