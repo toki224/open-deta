@@ -6,44 +6,143 @@
     <title>バリアナビ - ログイン</title>
     <link rel="stylesheet" href="../styles.css">
 </head>
-<body>
-    <div class="app-shell">
-        <header class="home-header">
-            <h1>バリアナビ</h1>
-            <p>駅のバリアフリー情報を確認できます</p>
-        </header>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>バリナビ</h1>
+            </div>
 
-        <main class="home-main">
-            <section class="home-panel">
-                <div class="panel-header">
-                    <h2>ログイン</h2>
-                    <p>アカウントにログインするか、ゲストとして利用してください</p>
+            <form id="login-form" class="login-form">
+                <div class="form-group">
+                    <label for="username">メールアドレスまたはユーザー名</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        placeholder="メールアドレスまたはユーザー名"
+                        required
+                        autocomplete="username"
+                    />
                 </div>
 
-                <form id="login-form" class="login-form">
-                    <div class="form-group">
-                        <label for="username">ユーザー名</label>
-                        <input type="text" id="username" name="username" required>
-                    </div>
+                <div class="form-group">
+                    <label for="password">パスワード</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        placeholder="パスワード"
+                        required
+                        autocomplete="current-password"
+                    />
+                </div>
 
-                    <div class="form-group">
-                        <label for="password">パスワード</label>
-                        <input type="password" id="password" name="password" required>
-                    </div>
+                <div class="form-options">
+                    <a href="#" id="forgot-password-link" class="forgot-password">パスワードを忘れた場合</a>
+                </div>
 
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">ログイン</button>
-                        <button type="button" id="guest-btn" class="btn btn-secondary">ゲストとして利用</button>
-                    </div>
-                </form>
+                <button type="submit" class="primary-btn login-btn">ログイン</button>
+            </form>
 
-                <div id="error-message" class="error-message" style="display: none;"></div>
-            </section>
-        </main>
+            <div class="login-divider">
+                <span>または</span>
+            </div>
+
+            <div class="login-actions">
+                <button id="signup-btn" class="secondary-btn">新規作成</button>
+                <button id="guest-btn" class="ghost-btn">ゲストで参加</button>
+            </div>
+
+            <div id="error-message" class="error-message" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- 新規作成モーダル -->
+    <div id="signup-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>新規アカウント作成</h2>
+                <button class="modal-close" id="close-signup-modal">&times;</button>
+            </div>
+            <form id="signup-form" class="login-form">
+                <div class="form-group">
+                    <label for="signup-username">ユーザー名</label>
+                    <input 
+                        type="text" 
+                        id="signup-username" 
+                        name="username" 
+                        placeholder="ユーザー名を入力"
+                        required
+                    />
+                </div>
+                <div class="form-group">
+                    <label for="signup-email">メールアドレス</label>
+                    <input 
+                        type="email" 
+                        id="signup-email" 
+                        name="email" 
+                        placeholder="メールアドレスを入力"
+                        required
+                        autocomplete="email"
+                    />
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">パスワード</label>
+                    <input 
+                        type="password" 
+                        id="signup-password" 
+                        name="password" 
+                        placeholder="パスワードを入力（8文字以上）"
+                        required
+                        minlength="8"
+                        autocomplete="new-password"
+                    />
+                </div>
+                <div class="form-group">
+                    <label for="signup-password-confirm">パスワード（確認）</label>
+                    <input 
+                        type="password" 
+                        id="signup-password-confirm" 
+                        name="password-confirm" 
+                        placeholder="パスワードを再入力"
+                        required
+                        autocomplete="new-password"
+                    />
+                </div>
+                <button type="submit" class="primary-btn">アカウントを作成</button>
+            </form>
+            <div id="signup-error-message" class="error-message" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- パスワードリセットモーダル -->
+    <div id="reset-password-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>パスワードをリセット</h2>
+                <button class="modal-close" id="close-reset-modal">&times;</button>
+            </div>
+            <form id="reset-password-form" class="login-form">
+                <div class="form-group">
+                    <label for="reset-email">メールアドレス</label>
+                    <input 
+                        type="email" 
+                        id="reset-email" 
+                        name="email" 
+                        placeholder="登録済みのメールアドレスを入力"
+                        required
+                        autocomplete="email"
+                    />
+                </div>
+                <p class="reset-info">登録済みのメールアドレスにパスワードリセット用のリンクを送信します。</p>
+                <button type="submit" class="primary-btn">リセットリンクを送信</button>
+            </form>
+            <div id="reset-error-message" class="error-message" style="display: none;"></div>
+            <div id="reset-success-message" class="success-message" style="display: none;"></div>
+        </div>
     </div>
 
     <script src="../dist/login.js"></script>
 </body>
 </html>
-
-
