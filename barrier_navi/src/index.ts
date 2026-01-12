@@ -90,6 +90,50 @@ const VISION_METRICS: BodyMetricDefinition[] = [
   { key: 'num_compliant_slopes', label: '移動等円滑化基準に適合している傾斜路の設置の有無', required: 2, type: 'number' },
 ];
 
+// プロフィールの優先機能とメトリックキーのマッピング
+const PREFERRED_FEATURE_TO_METRIC_KEY: Record<string, Record<'body' | 'hearing' | 'vision', string[]>> = {
+  'エレベーター': {
+    body: ['elevator_ratio'],
+    hearing: [],
+    vision: ['num_compliant_elevators']
+  },
+  'エスカレーター': {
+    body: ['escalator_ratio'],
+    hearing: [],
+    vision: ['num_compliant_escalators']
+  },
+  '障害者対応型改札口': {
+    body: ['has_accessible_gate'],
+    hearing: ['has_accessible_gate'],
+    vision: ['has_accessible_gate']
+  },
+  '障害者対応型便所': {
+    body: ['has_accessible_restroom'],
+    hearing: ['has_accessible_restroom'],
+    vision: ['has_accessible_restroom']
+  },
+  '案内設備': {
+    body: ['has_guidance_system'],
+    hearing: ['has_guidance_system'],
+    vision: ['has_guidance_system']
+  },
+  '転落防止設備': {
+    body: ['has_fall_prevention'],
+    hearing: ['has_fall_prevention'],
+    vision: ['has_fall_prevention']
+  },
+  '段差解消': {
+    body: ['step_response_status', 'platform_ratio'],
+    hearing: [],
+    vision: ['step_response_status', 'platform_ratio']
+  },
+  '車いす対応プラットフォーム': {
+    body: ['num_wheelchair_accessible_platforms'],
+    hearing: [],
+    vision: []
+  }
+};
+
 class StationApp {
   private apiBaseUrl = '/api';
   private currentPage = 1;
@@ -127,6 +171,8 @@ class StationApp {
     this.setupEventListeners();
     await this.loadPrefectures();
     await this.fetchLines();
+    // プロフィールの優先機能を自動的に適用
+    await this.applyPreferredFeatures();
     await this.loadStations();
   }
 
@@ -296,6 +342,73 @@ class StationApp {
     return filters;
   }
 
+  /**
+   * プロフィールの優先機能を読み込んで自動的に適用
+   */
+  private async applyPreferredFeatures(): Promise<void> {
+    // ログイン状態を確認
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const userId = localStorage.getItem('userId');
+    
+    if (!isLoggedIn || !userId) {
+      // ログインしていない場合は何もしない
+      return;
+    }
+
+    try {
+      // プロフィールデータを取得
+      const response = await fetch(`${this.apiBaseUrl}/auth/profile?user_id=${userId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data: { success: boolean; data?: { preferred_features?: string[] } } = await response.json();
+
+      if (data.success && data.data && data.data.preferred_features && data.data.preferred_features.length > 0) {
+        // 優先機能をメトリックキーに変換
+        const metricKeys: string[] = [];
+        
+        data.data.preferred_features.forEach((feature: string) => {
+          const mapping = PREFERRED_FEATURE_TO_METRIC_KEY[feature];
+          if (mapping && mapping[this.currentMode]) {
+            metricKeys.push(...mapping[this.currentMode]);
+          }
+        });
+
+        // 重複を除去
+        const uniqueMetricKeys = [...new Set(metricKeys)];
+
+        // 現在のモードで利用可能なメトリックのみをフィルタリング
+        const availableMetricKeys = uniqueMetricKeys.filter(key => 
+          this.currentMetrics.some(metric => metric.key === key)
+        );
+
+        if (availableMetricKeys.length > 0) {
+          // チェックボックスを自動的にチェック
+          availableMetricKeys.forEach(metricKey => {
+            const checkbox = document.querySelector<HTMLInputElement>(
+              `input.filter-checkbox[data-metric-key="${metricKey}"]`
+            );
+            if (checkbox) {
+              checkbox.checked = true;
+            }
+          });
+
+          // 絞り込み条件として適用
+          this.selectedFilters = availableMetricKeys;
+          
+          // アクティブフィルターを表示
+          this.updateActiveFilters();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load preferred features:', error);
+      // エラーが発生しても処理を続行
+    }
+  }
+
+
   private async loadPrefectures(): Promise<void> {
     const response = await this.fetchApi<Array<{ prefecture: string; count: number }>>('/stations/prefectures');
     if (response.success && response.data) {
@@ -327,7 +440,11 @@ class StationApp {
     if (loadingIndicator) loadingIndicator.style.display = 'block';
     if (stationsContainer) stationsContainer.innerHTML = '';
 
-    this.selectedFilters = this.collectFilters();
+    // チェックボックスからフィルターを収集（既に設定されているフィルターとマージ）
+    const collectedFilters = this.collectFilters();
+    // 既存のフィルターとマージ（重複を除去）
+    const allFilters = [...new Set([...this.selectedFilters, ...collectedFilters])];
+    this.selectedFilters = allFilters;
     const params = new URLSearchParams({
       limit: this.pageSize.toString(),
       offset: ((this.currentPage - 1) * this.pageSize).toString(),

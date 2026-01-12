@@ -24,7 +24,7 @@ interface ApiResponse<T> {
 }
 
 class ProfilePage {
-  private apiBaseUrl = 'http://localhost:5000/api';
+  private apiBaseUrl = '/api';
   private userId: string | null = null;
   private favoriteStations: Array<{ id: number; name: string }> = [];
   private stationSearchTimeout: number | null = null;
