@@ -14,12 +14,20 @@ from database_connection import DatabaseConnection
 import bcrypt
 import os
 
+# プロジェクトルートのパスを設定
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 # .envファイルから環境変数を読み込む
-# 明示的にパスを指定（api_server.pyと同じディレクトリの.envを読み込む）
-env_path = os.path.join(os.path.dirname(__file__), '.env')
+# プロジェクトルートの.envを読み込む
+env_path = os.path.join(BASE_DIR, '.env')
 load_dotenv(dotenv_path=env_path)
 
-app = Flask(__name__, static_folder='.', static_url_path='')
+# フロントエンドファイルのパスを設定
+FRONTEND_DIR = os.path.join(BASE_DIR, 'frontend')
+VIEW_DIR = os.path.join(FRONTEND_DIR, 'view')
+DIST_DIR = os.path.join(FRONTEND_DIR, 'dist')
+
+app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path='')
 CORS(app)  # CORSを有効化してフロントエンドからのアクセスを許可
 
 # MySQL接続情報（環境変数から取得）
@@ -606,52 +614,52 @@ def get_lines():
 @app.route('/')
 def index():
     """ルートパスでログイン画面を表示"""
-    return send_file(os.path.join(os.path.dirname(__file__), 'view', 'login.html'))
+    return send_file(os.path.join(VIEW_DIR, 'login.html'))
 
 @app.route('/login')
 def login_page():
     """ログイン画面"""
-    return send_file(os.path.join(os.path.dirname(__file__), 'view', 'login.html'))
+    return send_file(os.path.join(VIEW_DIR, 'login.html'))
 
 @app.route('/home')
 def home_page():
     """ホーム画面"""
-    return send_file(os.path.join(os.path.dirname(__file__), 'view', 'home.html'))
+    return send_file(os.path.join(VIEW_DIR, 'home.html'))
 
 @app.route('/index')
 def index_page():
     """一覧画面（身体障害向け）"""
-    return send_file(os.path.join(os.path.dirname(__file__), 'view', 'index.html'))
+    return send_file(os.path.join(VIEW_DIR, 'index.html'))
 
 @app.route('/hearing')
 def hearing_page():
     """聴覚障害向け一覧画面"""
-    return send_file(os.path.join(os.path.dirname(__file__), 'view', 'hearing.html'))
+    return send_file(os.path.join(VIEW_DIR, 'hearing.html'))
 
 @app.route('/vision')
 def vision_page():
     """視覚障害向け一覧画面"""
-    return send_file(os.path.join(os.path.dirname(__file__), 'view', 'vision.html'))
+    return send_file(os.path.join(VIEW_DIR, 'vision.html'))
 
 @app.route('/profile')
 def profile_page():
     """プロフィール画面"""
-    return send_file(os.path.join(os.path.dirname(__file__), 'view', 'profile.html'))
+    return send_file(os.path.join(VIEW_DIR, 'profile.html'))
 
 @app.route('/detail')
 def detail_page():
     """詳細画面"""
-    return send_file(os.path.join(os.path.dirname(__file__), 'view', 'detail.html'))
+    return send_file(os.path.join(VIEW_DIR, 'detail.html'))
 
 @app.route('/styles.css')
 def styles_css():
     """CSSファイル"""
-    return send_file(os.path.join(os.path.dirname(__file__), 'styles.css'))
+    return send_file(os.path.join(FRONTEND_DIR, 'styles.css'))
 
 @app.route('/dist/<path:filename>')
 def dist_files(filename):
     """distディレクトリ内のファイル（JS、CSS等）"""
-    return send_from_directory('dist', filename)
+    return send_from_directory(DIST_DIR, filename)
 
 # ==================== 認証関連API ====================
 
@@ -1181,5 +1189,7 @@ if __name__ == '__main__':
     host = os.getenv("FLASK_HOST", "0.0.0.0")  # Docker環境では0.0.0.0が必要
     debug = os.getenv("FLASK_ENV", "production") == "development"
     print(f"http://{host}:{port} でアクセスできます")
+    # 作業ディレクトリをプロジェクトルートに変更
+    os.chdir(BASE_DIR)
     app.run(debug=debug, host=host, port=port)
 

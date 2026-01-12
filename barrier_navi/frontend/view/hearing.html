@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>バリアナビ（聴覚障害向け）</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body data-mode="hearing">
+    <div class="app-shell">
+        <main class="body-layout">
+            <section class="list-panel">
+                <div style="margin-bottom: 20px;">
+                    <a href="/home" class="ghost-btn" style="text-decoration: none;">← ホームに戻る</a>
+                </div>
+                <div class="panel-header">
+                    <h1>ホーム_聴覚</h1>
+                    <p>聴覚障害の方向けに駅のバリアフリー度を一覧表示します</p>
+                </div>
+
+                <div class="search-area">
+                    <input type="text" id="search-input" placeholder="駅名で検索" />
+                    <button id="search-btn" class="primary-btn">検索</button>
+                </div>
+                <div class="sort-area">
+                    <label for="sort-select">並び替え:</label>
+                    <select id="sort-select" class="sort-select">
+                        <option value="none">指定なし</option>
+                        <option value="score-asc">点数: 昇順</option>
+                        <option value="score-desc">点数: 降順</option>
+                    </select>
+                </div>
+
+                <div id="loading" class="loading" style="display: none;">
+                    <p>読み込み中...</p>
+                </div>
+
+                <div id="stations-list" class="station-list"></div>
+
+                <div class="pagination">
+                    <button id="first-btn" class="ghost-btn">« 最初へ</button>
+                    
+                    <button id="prev-btn" class="ghost-btn">前へ</button>
+                    <span id="page-info">ページ 1</span>
+                    <button id="next-btn" class="ghost-btn">次へ</button>
+                    
+                    <button id="last-btn" class="ghost-btn">最後へ »</button>
+                </div>
+            </section>
+
+            <aside class="filter-panel">
+                <h2>絞り込み</h2>
+
+                <div class="filter-group">
+                    <label>障害選択</label>
+                    <div class="chip chip-active">聴覚障害</div>
+                </div>
+
+                <div class="filter-group">
+                    <label for="prefecture-select">都道府県</label>
+                    <select id="prefecture-select">
+                        <option value="">読み込み中...</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="line-select">路線</label>
+                    <select id="line-select">
+                        <option value="">指定なし</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>バリアフリー設備で絞り込み</label>
+                    <div id="filter-list" class="filter-list"></div>
+                </div>
+
+                <div class="filter-buttons">
+                    <button id="apply-filter-btn" class="primary-btn">条件を適用</button>
+                    <button id="reset-filter-btn" class="ghost-btn">リセット</button>
+                </div>
+
+                <div class="filter-group" id="active-filters-group" style="display: none;">
+                    <label>適用中の条件</label>
+                    <div id="active-filters" class="active-filters"></div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <script src="/dist/index.js"></script>
+</body>
+</html>
+

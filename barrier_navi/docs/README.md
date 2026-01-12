@@ -76,26 +76,27 @@ MYSQL_DATABASE=station
 ### 2. Pythonパッケージのインストール
 
 ```bash
-py -m pip install -r requirements.txt
+py -m pip install -r config/requirements.txt
 ```
 
 または
 
 ```bash
-pip install -r requirements.txt
+pip install -r config/requirements.txt
 ```
 
 ### 3. TypeScriptのビルド（任意）
 
-`dist/`フォルダにはコンパイル済みのJavaScriptファイルが含まれているため、Node.jsがなくてもブラウザ表示は可能です。  
+`frontend/dist/`フォルダにはコンパイル済みのJavaScriptファイルが含まれているため、Node.jsがなくてもブラウザ表示は可能です。  
 TypeScriptを編集して再ビルドしたい場合のみ、下記手順を実行してください。
 
 ```bash
+cd frontend
 npm install          # 依存関係の取得
 npm run build        # もしくは tsc
 ```
 
-ビルド後は `dist/` フォルダ内のJavaScriptファイルが更新されます。
+ビルド後は `frontend/dist/` フォルダ内のJavaScriptファイルが更新されます。
 
 ### 4. データベースの準備
 
@@ -111,13 +112,13 @@ npm run build        # もしくは tsc
 ### 1. APIサーバーの起動
 
 ```bash
-py api_server.py
+py backend/api_server.py
 ```
 
 または、Windowsの場合：
 
 ```bash
-start.bat
+scripts\start.bat
 ```
 
 APIサーバーは `http://localhost:5000` で起動します。
@@ -207,42 +208,60 @@ http://localhost:5000
 
 ```
 .
-├── api_server.py                    # Flask APIサーバー
-├── database_connection.py          # データベース接続クラス
-├── setup_users_preferences_table.py # users_preferencesテーブルセットアップ
-├── check_*.py                       # データベース確認用スクリプト
-├── test_*.py                        # テストスクリプト
-├── start.bat                        # サーバー起動用バッチファイル（Windows）
-├── styles.css                       # スタイルシート
-├── view/                            # HTMLファイル
-│   ├── login.html                  # ログイン画面
-│   ├── home.html                   # ホーム画面
-│   ├── index.html                  # 一覧画面（身体障害向け）
-│   ├── detail.html                 # 詳細画面
-│   ├── profile.html                # プロフィール画面
-│   ├── hearing.html                # 聴覚障害向け画面
-│   └── vision.html                 # 視覚障害向け画面
-├── src/                             # TypeScriptソースファイル
-│   ├── login.ts                    # ログイン画面のロジック
-│   ├── home.ts                     # ホーム画面のロジック
-│   ├── index.ts                    # 一覧画面のロジック
-│   ├── detail.ts                   # 詳細画面のロジック
-│   └── profile.ts                  # プロフィール画面のロジック
-├── dist/                            # コンパイル済みJavaScriptファイル
-│   ├── login.js
-│   ├── home.js
-│   ├── index.js
-│   ├── detail.js
-│   └── profile.js
+├── backend/                         # バックエンド（Python/Flask）
+│   ├── api_server.py               # Flask APIサーバー
+│   ├── database_connection.py      # データベース接続クラス
+│   ├── setup_users_preferences_table.py # users_preferencesテーブルセットアップ
+│   ├── check_*.py                  # データベース確認用スクリプト
+│   └── test_*.py                   # テストスクリプト
+├── frontend/                        # フロントエンド（TypeScript/HTML/CSS）
+│   ├── src/                         # TypeScriptソースファイル
+│   │   ├── login.ts                # ログイン画面のロジック
+│   │   ├── home.ts                 # ホーム画面のロジック
+│   │   ├── index.ts                # 一覧画面のロジック
+│   │   ├── detail.ts               # 詳細画面のロジック
+│   │   └── profile.ts              # プロフィール画面のロジック
+│   ├── dist/                        # コンパイル済みJavaScriptファイル
+│   │   ├── login.js
+│   │   ├── home.js
+│   │   ├── index.js
+│   │   ├── detail.js
+│   │   └── profile.js
+│   ├── view/                        # HTMLファイル
+│   │   ├── login.html              # ログイン画面
+│   │   ├── home.html               # ホーム画面
+│   │   ├── index.html              # 一覧画面（身体障害向け）
+│   │   ├── detail.html             # 詳細画面
+│   │   ├── profile.html            # プロフィール画面
+│   │   ├── hearing.html            # 聴覚障害向け画面
+│   │   └── vision.html             # 視覚障害向け画面
+│   ├── styles.css                   # スタイルシート
+│   ├── package.json                # Node.js依存関係
+│   └── tsconfig.json               # TypeScript設定
+├── database/                        # データベース関連
+│   ├── init.sql                    # データベース初期化スクリプト
+│   ├── DDL.sql                     # テーブル定義
+│   ├── tokyo_stations.csv          # 駅データCSVファイル
+│   ├── import_csv_data.py          # CSVインポートスクリプト
+│   ├── import_csv.sql              # CSVインポートSQL
+│   └── import_csv.sh               # CSVインポートシェルスクリプト
+├── docker/                          # Docker関連
+│   ├── Dockerfile                  # Dockerイメージ定義
+│   ├── docker-compose.yml          # Docker Compose設定
+│   ├── docker-entrypoint.sh        # エントリーポイントスクリプト
+│   └── .dockerignore               # Docker除外設定
 ├── docs/                            # ドキュメント
-│   └── barianavi_spec.md           # バリアナビの詳細仕様書
-├── package.json                     # Node.js依存関係
-├── tsconfig.json                    # TypeScript設定
-├── requirements.txt                 # Python依存関係
-├── README.md                        # このファイル
-├── WEBアプリケーション概要.txt      # アプリケーション概要
-├── スコア計算ロジック説明.txt       # スコア計算の詳細説明
-├── プログラム概要.txt               # 初心者向けプログラム説明
+│   ├── README.md                   # このファイル
+│   ├── DOCKER_README.md            # Docker使用ガイド
+│   ├── barianavi_spec.md           # バリアナビの詳細仕様書
+│   ├── WEBアプリケーション概要.txt # アプリケーション概要
+│   ├── スコア計算ロジック説明.txt  # スコア計算の詳細説明
+│   ├── プログラム概要.txt          # 初心者向けプログラム説明
+│   └── 優先機能自動絞り込み機能説明.txt # 優先機能自動絞り込み機能の説明
+├── scripts/                         # スクリプト
+│   └── start.bat                   # サーバー起動用バッチファイル（Windows）
+├── config/                          # 設定ファイル
+│   └── requirements.txt            # Python依存関係
 ├── .env                             # 環境変数ファイル（.gitignoreに含まれる）
 └── .gitignore                       # Git除外設定
 ```

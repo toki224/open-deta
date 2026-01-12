@@ -59,8 +59,8 @@ fi
 
 # CSVデータのインポート（データが存在しない場合のみ）
 echo "CSVデータのインポートを確認中..."
-if [ -f /app/import_csv_data.py ]; then
-    python3 /app/import_csv_data.py || echo "警告: CSVデータのインポートに失敗しました（既にデータが存在する可能性があります）"
+if [ -f /app/database/import_csv_data.py ]; then
+    python3 /app/database/import_csv_data.py || echo "警告: CSVデータのインポートに失敗しました（既にデータが存在する可能性があります）"
 else
     echo "警告: import_csv_data.pyが見つかりません"
 fi
@@ -69,5 +69,5 @@ fi
 echo "=========================================="
 echo "Flaskアプリケーションを起動します"
 echo "=========================================="
-exec python api_server.py
+exec python backend/api_server.py
 

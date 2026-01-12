@@ -35,7 +35,14 @@ FLASK_ENV=production
 以下のコマンドでDockerコンテナをビルドして起動します：
 
 ```bash
+cd docker
 docker-compose up -d --build
+```
+
+または、プロジェクトルートから：
+
+```bash
+docker-compose -f docker/docker-compose.yml up -d --build
 ```
 
 初回起動時は、イメージのビルドとデータベースの初期化に時間がかかります。
@@ -71,24 +78,40 @@ http://localhost:5000
 ### コンテナの起動
 
 ```bash
+cd docker
 docker-compose up -d
+```
+
+または、プロジェクトルートから：
+
+```bash
+docker-compose -f docker/docker-compose.yml up -d
 ```
 
 ### コンテナの停止
 
 ```bash
+cd docker
 docker-compose down
+```
+
+または、プロジェクトルートから：
+
+```bash
+docker-compose -f docker/docker-compose.yml down
 ```
 
 ### コンテナの停止とボリュームの削除（データベースデータも削除）
 
 ```bash
+cd docker
 docker-compose down -v
 ```
 
 ### ログの確認
 
 ```bash
+cd docker
 # すべてのサービスのログ
 docker-compose logs
 
@@ -105,6 +128,7 @@ docker-compose logs -f web
 ### コンテナ内でのコマンド実行
 
 ```bash
+cd docker
 # Webコンテナ内でシェルを実行
 docker-compose exec web bash
 
@@ -115,6 +139,7 @@ docker-compose exec db mysql -u barrier_user -pbarrier_password station
 ### コンテナの再ビルド
 
 ```bash
+cd docker
 # イメージを再ビルドして起動
 docker-compose up -d --build
 
@@ -139,16 +164,19 @@ MYSQL_PORT=3308
 
 1. データベースコンテナが起動しているか確認：
    ```bash
+   cd docker
    docker-compose ps
    ```
 
 2. データベースのログを確認：
    ```bash
+   cd docker
    docker-compose logs db
    ```
 
 3. データベースのヘルスチェックを確認：
    ```bash
+   cd docker
    docker-compose exec db mysqladmin ping -h localhost -u root -prootpassword
    ```
 
@@ -157,12 +185,14 @@ MYSQL_PORT=3308
 TypeScriptのコンパイルに失敗する場合、以下のコマンドでコンテナ内で直接ビルドできます：
 
 ```bash
-docker-compose exec web npm run build
+cd docker
+docker-compose exec web bash -c "cd /app/frontend && npm run build"
 ```
 
 ### データベースのデータをリセットしたい場合
 
 ```bash
+cd docker
 # コンテナとボリュームを削除
 docker-compose down -v
 
@@ -175,13 +205,15 @@ docker-compose up -d
 `import_csv.sql`での自動インポートに失敗した場合は、Pythonスクリプトを使用して手動でインポートできます：
 
 ```bash
+cd docker
 # Webコンテナ内でPythonスクリプトを実行
-docker-compose exec web python /app/import_csv_data.py
+docker-compose exec web python /app/database/import_csv_data.py
 ```
 
 または、MySQLコンテナに直接接続して手動でインポート：
 
 ```bash
+cd docker
 # MySQLコンテナに接続
 docker-compose exec db bash
 
@@ -205,9 +237,10 @@ volumes:
 
 ### 環境変数の変更
 
-`.env`ファイルを変更した後は、コンテナを再起動してください：
+`.env`ファイル（プロジェクトルート）を変更した後は、コンテナを再起動してください：
 
 ```bash
+cd docker
 docker-compose restart
 ```
 
@@ -232,14 +265,15 @@ docker-compose restart
 
 Docker化に関連するファイル：
 
-- `Dockerfile`: Python Flaskアプリケーション用のDockerイメージ定義
-- `docker-compose.yml`: サービス（Web、DB）の定義と設定
-- `.dockerignore`: Dockerイメージに含めないファイルのリスト
-- `init.sql`: データベース初期化スクリプト（テーブル作成）
-- `import_csv.sql`: CSVデータインポートスクリプト（自動実行）
-- `tokyo_stations.csv`: 駅データのCSVファイル
-- `import_csv_data.py`: Python版CSVインポートスクリプト（手動実行用）
-- `.env`: 環境変数設定（Gitにコミットしない）
+- `docker/Dockerfile`: Python Flaskアプリケーション用のDockerイメージ定義
+- `docker/docker-compose.yml`: サービス（Web、DB）の定義と設定
+- `docker/.dockerignore`: Dockerイメージに含めないファイルのリスト
+- `docker/docker-entrypoint.sh`: エントリーポイントスクリプト
+- `database/init.sql`: データベース初期化スクリプト（テーブル作成）
+- `database/import_csv.sql`: CSVデータインポートスクリプト（自動実行）
+- `database/tokyo_stations.csv`: 駅データのCSVファイル
+- `database/import_csv_data.py`: Python版CSVインポートスクリプト（手動実行用）
+- `.env`: 環境変数設定（プロジェクトルート、Gitにコミットしない）
 
 ## サポート
 

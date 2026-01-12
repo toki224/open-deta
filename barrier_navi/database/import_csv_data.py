@@ -216,8 +216,8 @@ def main():
     """メイン関数"""
     mysql_config = get_mysql_config()
     
-    # CSVファイルのパス（Docker環境では/app/にマウントされる）
-    csv_file_path = os.getenv("CSV_FILE_PATH", "/app/tokyo_stations.csv")
+    # CSVファイルのパス（Docker環境では/app/database/にマウントされる）
+    csv_file_path = os.getenv("CSV_FILE_PATH", "/app/database/tokyo_stations.csv")
     
     # ファイルが存在しない場合は、現在のディレクトリを確認
     if not os.path.exists(csv_file_path):

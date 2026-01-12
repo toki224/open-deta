@@ -13,7 +13,7 @@ services:
       - "${MYSQL_PORT:-3307}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ../database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
       interval: 10s
@@ -25,8 +25,8 @@ services:
   # Flask APIサーバーサービス
   web:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: barrier_navi_web
     restart: unless-stopped
     ports:
@@ -47,9 +47,9 @@ services:
       # 開発時のみ必要（ホットリロード用）
       # - .:/app
       # ログファイルをマウント（オプション）
-      - ./logs:/app/logs
+      - ../logs:/app/logs
       # CSVファイルをマウント（インポート用）
-      - ./tokyo_stations.csv:/app/tokyo_stations.csv:ro
+      - ../database/tokyo_stations.csv:/app/database/tokyo_stations.csv:ro
     networks:
       - barrier_navi_network
 
