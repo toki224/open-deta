@@ -620,8 +620,18 @@ def home_page():
 
 @app.route('/index')
 def index_page():
-    """一覧画面"""
+    """一覧画面（身体障害向け）"""
     return send_file(os.path.join(os.path.dirname(__file__), 'view', 'index.html'))
+
+@app.route('/hearing')
+def hearing_page():
+    """聴覚障害向け一覧画面"""
+    return send_file(os.path.join(os.path.dirname(__file__), 'view', 'hearing.html'))
+
+@app.route('/vision')
+def vision_page():
+    """視覚障害向け一覧画面"""
+    return send_file(os.path.join(os.path.dirname(__file__), 'view', 'vision.html'))
 
 @app.route('/profile')
 def profile_page():
@@ -1167,6 +1177,9 @@ def update_profile():
 
 if __name__ == '__main__':
     print("Flask APIサーバーを起動します...")
-    print("http://localhost:5000 でアクセスできます")
-    app.run(debug=True, port=5000)
+    port = int(os.getenv("FLASK_PORT", "5000"))
+    host = os.getenv("FLASK_HOST", "0.0.0.0")  # Docker環境では0.0.0.0が必要
+    debug = os.getenv("FLASK_ENV", "production") == "development"
+    print(f"http://{host}:{port} でアクセスできます")
+    app.run(debug=debug, host=host, port=port)
 

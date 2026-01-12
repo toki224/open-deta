@@ -1,0 +1,63 @@
+# Python関連
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Node.js関連
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ビルド成果物
+dist/
+*.js.map
+*.d.ts.map
+
+# 環境変数ファイル
+.env
+.env.local
+.env.*.local
+
+# IDE関連
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS関連
+.DS_Store
+Thumbs.db
+
+# Git関連
+.git/
+.gitignore
+
+# Docker関連
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# ログファイル
+logs/
+*.log
+
+# テストファイル
+test_*.py
+check_*.py
+
+# 一時ファイル
+*.tmp
+*.bak
+*.zip
+
+# ドキュメント（必要に応じて）
+# docs/
+

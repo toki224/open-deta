@@ -38,7 +38,7 @@ interface DetailStation {
 }
 
 class DetailPage {
-  private apiBaseUrl = 'http://localhost:5000/api';
+  private apiBaseUrl = '/api';
   private titleEl: HTMLElement | null = null;
   private scoreEl: HTMLElement | null = null;
   private metaEl: HTMLElement | null = null;
@@ -74,11 +74,11 @@ class DetailPage {
 
     if (backBtn) {
       if (this.currentMode === 'hearing') {
-        backBtn.href = 'hearing.html';
+        backBtn.href = '/hearing';
       } else if (this.currentMode === 'vision') {
-        backBtn.href = 'vision.html';
+        backBtn.href = '/vision';
       } else {
-        backBtn.href = 'index.html';
+        backBtn.href = '/index';
       }
     }
   }

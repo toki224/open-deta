@@ -1,0 +1,63 @@
+services:
+  # MySQLデータベースサービス
+  db:
+    image: mysql:8.0
+    container_name: barrier_navi_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-station}
+      MYSQL_USER: ${MYSQL_USER:-barrier_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-barrier_password}
+    ports:
+      - "${MYSQL_PORT:-3307}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - barrier_navi_network
+
+  # Flask APIサーバーサービス
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: barrier_navi_web
+    restart: unless-stopped
+    ports:
+      - "${FLASK_PORT:-5000}:5000"
+    environment:
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_USER: ${MYSQL_USER:-barrier_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-barrier_password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-station}
+      FLASK_ENV: ${FLASK_ENV:-production}
+      FLASK_HOST: 0.0.0.0
+      FLASK_PORT: 5000
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # 開発時のみ必要（ホットリロード用）
+      # - .:/app
+      # ログファイルをマウント（オプション）
+      - ./logs:/app/logs
+      # CSVファイルをマウント（インポート用）
+      - ./tokyo_stations.csv:/app/tokyo_stations.csv:ro
+    networks:
+      - barrier_navi_network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  barrier_navi_network:
+    driver: bridge
+

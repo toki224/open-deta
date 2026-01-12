@@ -91,7 +91,7 @@ const VISION_METRICS: BodyMetricDefinition[] = [
 ];
 
 class StationApp {
-  private apiBaseUrl = 'http://localhost:5000/api';
+  private apiBaseUrl = '/api';
   private currentPage = 1;
   private pageSize = 10;
   private selectedPrefecture: string | null = null;
@@ -553,7 +553,7 @@ class StationApp {
   }
 
   private navigateToDetail(stationId: number): void {
-    const url = new URL('detail.html', window.location.href);
+    const url = new URL('/detail', window.location.origin);
     url.searchParams.set('stationId', stationId.toString());
     url.searchParams.set('mode', this.currentMode);
     window.location.href = url.toString();
@@ -571,7 +571,7 @@ class StationApp {
       if (!lineSelect) return;
 
       try {
-          const res = await fetch('http://localhost:5000/api/lines');
+          const res = await fetch('/api/lines');
           const json = await res.json();
 
           if (json.success) {
