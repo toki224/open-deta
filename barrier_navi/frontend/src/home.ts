@@ -114,7 +114,7 @@ class HomePage {
       localStorage.removeItem('username');
       localStorage.removeItem('rememberMe');
       localStorage.removeItem('userId');
-      window.location.href = 'view/login.html';
+      window.location.href = '/';
     }
   }
 
