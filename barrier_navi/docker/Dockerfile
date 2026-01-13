@@ -45,6 +45,8 @@ ENV FLASK_ENV=production
 
 # エントリーポイントスクリプトをコピー
 COPY docker/docker-entrypoint.sh /app/docker-entrypoint.sh
+# 改行コードをLFに変換（Windows環境でのCRLF問題を回避）
+RUN sed -i 's/\r$//' /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 
 # アプリケーションを起動
