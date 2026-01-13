@@ -178,6 +178,24 @@ body.login-page {
     font-size: 0.85rem;
 }
 
+/* お気に入り駅のスタイル */
+.station-card--favorite {
+    border-color: #ffd700;
+    background: linear-gradient(to bottom, #fffef7 0%, #ffffff 100%);
+}
+
+.station-card--favorite:hover {
+    box-shadow: 0 12px 24px rgba(255, 215, 0, 0.2);
+}
+
+.favorite-icon {
+    color: #ffd700;
+    font-size: 1.2rem;
+    margin-right: 6px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
 .loading,
 .no-data,
 .error {

@@ -146,6 +146,7 @@ class StationApp {
   private sortOrder: 'none' | 'score-asc' | 'score-desc' = 'none';
   private currentMode: 'body' | 'hearing' | 'vision' = 'body';
   private currentMetrics: BodyMetricDefinition[];
+  private favoriteStationIds: number[] = []; // お気に入り駅IDのリスト
 
   constructor() {
     const mode = document.body.dataset.mode;
@@ -173,6 +174,8 @@ class StationApp {
     await this.fetchLines();
     // プロフィールの優先機能を自動的に適用
     await this.applyPreferredFeatures();
+    // お気に入り駅を取得
+    await this.loadFavoriteStations();
     await this.loadStations();
   }
 
@@ -408,6 +411,42 @@ class StationApp {
     }
   }
 
+  /**
+   * お気に入り駅IDを取得
+   */
+  private async loadFavoriteStations(): Promise<void> {
+    // ログイン状態を確認
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const userId = localStorage.getItem('userId');
+    
+    if (!isLoggedIn || !userId) {
+      // ログインしていない場合は空配列を設定
+      this.favoriteStationIds = [];
+      return;
+    }
+
+    try {
+      // プロフィールデータを取得
+      const response = await fetch(`${this.apiBaseUrl}/auth/profile?user_id=${userId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data: { success: boolean; data?: { favorite_stations?: number[] } } = await response.json();
+
+      if (data.success && data.data && data.data.favorite_stations && Array.isArray(data.data.favorite_stations)) {
+        // お気に入り駅IDを保存
+        this.favoriteStationIds = data.data.favorite_stations.map(id => parseInt(String(id))).filter(id => !isNaN(id) && id > 0);
+      } else {
+        this.favoriteStationIds = [];
+      }
+    } catch (error) {
+      console.error('Failed to load favorite stations:', error);
+      // エラーが発生した場合は空配列を設定
+      this.favoriteStationIds = [];
+    }
+  }
 
   private async loadPrefectures(): Promise<void> {
     const response = await this.fetchApi<Array<{ prefecture: string; count: number }>>('/stations/prefectures');
@@ -445,9 +484,11 @@ class StationApp {
     // 既存のフィルターとマージ（重複を除去）
     const allFilters = [...new Set([...this.selectedFilters, ...collectedFilters])];
     this.selectedFilters = allFilters;
+    
+    // 全件取得するために大きなlimitを設定（お気に入り駅を先頭に表示するため）
     const params = new URLSearchParams({
-      limit: this.pageSize.toString(),
-      offset: ((this.currentPage - 1) * this.pageSize).toString(),
+      limit: '10000', // 全件取得するために大きな値を設定
+      offset: '0',
       sort: this.sortOrder
     });
 
@@ -469,40 +510,67 @@ class StationApp {
 
     if (loadingIndicator) loadingIndicator.style.display = 'none';
 
-    // sortロジック変更前の表示部分
-    // if (response.success && response.data) {
-    //   let sortedData = [...response.data];
-      
-    //   // ソートを適用
-    //   if (this.sortOrder === 'score-asc') {
-    //     sortedData.sort((a, b) => a.score.percentage - b.score.percentage);
-    //   } else if (this.sortOrder === 'score-desc') {
-    //     sortedData.sort((a, b) => b.score.percentage - a.score.percentage);
-    //   }
-      
-    //   this.lastResultCount = sortedData.length;
-    //   this.totalCount = response.total_count || 0; // ★追加: 全件数を保存
-
-    //   this.renderStationCards(sortedData);
-    //   this.updatePagination();
-    //   this.updateActiveFilters();
-    // } else if (stationsContainer) {
-    //   stationsContainer.innerHTML = `<p class="error">データの取得に失敗しました: ${response.error}</p>`;
-    // }
-
-    // sortロジック変更後の表示部分
+    // 全件取得してから、お気に入り駅を先頭に移動してからページング
     if (response.success && response.data) {
       
-      const stationData = response.data;
+      let stationData = response.data;
       
-      this.lastResultCount = stationData.length;
-      this.totalCount = response.total_count || 0;
+      // お気に入り駅を先頭に並べ替え（ソート順も適用）
+      if (this.favoriteStationIds.length > 0) {
+        stationData = this.sortStationsWithFavorites(stationData);
+      }
+      
+      // ページング処理
+      const start = (this.currentPage - 1) * this.pageSize;
+      const end = start + this.pageSize;
+      const pagedData = stationData.slice(start, end);
+      
+      this.lastResultCount = pagedData.length;
+      this.totalCount = response.total_count || stationData.length;
 
-      this.renderStationCards(stationData);
+      this.renderStationCards(pagedData);
       this.updatePagination();
       this.updateActiveFilters();
     } else if (stationsContainer) {
       stationsContainer.innerHTML = `<p class="error">データの取得に失敗しました: ${response.error}</p>`;
+    }
+  }
+
+  /**
+   * お気に入り駅を先頭に並べ替える（ソート順も適用）
+   */
+  private sortStationsWithFavorites(stations: BodyStationSummary[]): BodyStationSummary[] {
+    const favoriteStations: BodyStationSummary[] = [];
+    const otherStations: BodyStationSummary[] = [];
+
+    // お気に入り駅とその他の駅を分ける
+    stations.forEach(station => {
+      if (this.favoriteStationIds.includes(station.station_id)) {
+        favoriteStations.push(station);
+      } else {
+        otherStations.push(station);
+      }
+    });
+
+    // ソート順を適用
+    const sortFavoriteStations = this.applySortOrder(favoriteStations);
+    const sortOtherStations = this.applySortOrder(otherStations);
+
+    // お気に入り駅を先頭に、その後にその他の駅を配置
+    return [...sortFavoriteStations, ...sortOtherStations];
+  }
+
+  /**
+   * ソート順を適用する
+   */
+  private applySortOrder(stations: BodyStationSummary[]): BodyStationSummary[] {
+    if (this.sortOrder === 'score-asc') {
+      return [...stations].sort((a, b) => a.score.percentage - b.score.percentage);
+    } else if (this.sortOrder === 'score-desc') {
+      return [...stations].sort((a, b) => b.score.percentage - a.score.percentage);
+    } else {
+      // 指定なしの場合は元の順序を維持（API側のソート順）
+      return stations;
     }
   }
 
@@ -626,11 +694,18 @@ class StationApp {
 
     container.innerHTML = '';
     stations.forEach((station) => {
+      const isFavorite = this.favoriteStationIds.includes(station.station_id);
       const card = document.createElement('div');
       card.className = 'station-card';
+      if (isFavorite) {
+        card.classList.add('station-card--favorite');
+      }
       card.innerHTML = `
         <div class="station-card__header">
-          <span class="station-card__name">${this.escapeHtml(station.station_name)}</span>
+          <span class="station-card__name">
+            ${isFavorite ? '<span class="favorite-icon">★</span>' : ''}
+            ${this.escapeHtml(station.station_name)}
+          </span>
           <span class="station-card__score">${station.score.label}</span>
         </div>
         <div class="station-card__meta">
