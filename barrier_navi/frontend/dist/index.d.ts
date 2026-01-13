@@ -44,6 +44,7 @@ interface BodyMetricDefinition {
 declare const BODY_METRICS: BodyMetricDefinition[];
 declare const HEARING_METRICS: BodyMetricDefinition[];
 declare const VISION_METRICS: BodyMetricDefinition[];
+declare const PREFERRED_FEATURE_TO_METRIC_KEY: Record<string, Record<'body' | 'hearing' | 'vision', string[]>>;
 declare class StationApp {
     private apiBaseUrl;
     private currentPage;
@@ -63,6 +64,10 @@ declare class StationApp {
     private applySearch;
     private resetFilters;
     private collectFilters;
+    /**
+     * プロフィールの優先機能を読み込んで自動的に適用
+     */
+    private applyPreferredFeatures;
     private loadPrefectures;
     private fetchApi;
     private loadStations;

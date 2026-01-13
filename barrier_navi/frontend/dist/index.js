@@ -41,9 +41,52 @@ const VISION_METRICS = [
     { key: 'num_compliant_escalators', label: '移動等円滑化基準に適合しているエスカレーターの設置の有無', required: 4, type: 'number' },
     { key: 'num_compliant_slopes', label: '移動等円滑化基準に適合している傾斜路の設置の有無', required: 2, type: 'number' },
 ];
+// プロフィールの優先機能とメトリックキーのマッピング
+const PREFERRED_FEATURE_TO_METRIC_KEY = {
+    'エレベーター': {
+        body: ['elevator_ratio'],
+        hearing: [],
+        vision: ['num_compliant_elevators']
+    },
+    'エスカレーター': {
+        body: ['escalator_ratio'],
+        hearing: [],
+        vision: ['num_compliant_escalators']
+    },
+    '障害者対応型改札口': {
+        body: ['has_accessible_gate'],
+        hearing: ['has_accessible_gate'],
+        vision: ['has_accessible_gate']
+    },
+    '障害者対応型便所': {
+        body: ['has_accessible_restroom'],
+        hearing: ['has_accessible_restroom'],
+        vision: ['has_accessible_restroom']
+    },
+    '案内設備': {
+        body: ['has_guidance_system'],
+        hearing: ['has_guidance_system'],
+        vision: ['has_guidance_system']
+    },
+    '転落防止設備': {
+        body: ['has_fall_prevention'],
+        hearing: ['has_fall_prevention'],
+        vision: ['has_fall_prevention']
+    },
+    '段差解消': {
+        body: ['step_response_status', 'platform_ratio'],
+        hearing: [],
+        vision: ['step_response_status', 'platform_ratio']
+    },
+    '車いす対応プラットフォーム': {
+        body: ['num_wheelchair_accessible_platforms'],
+        hearing: [],
+        vision: []
+    }
+};
 class StationApp {
     constructor() {
-        this.apiBaseUrl = 'http://localhost:5000/api';
+        this.apiBaseUrl = '/api';
         this.currentPage = 1;
         this.pageSize = 10;
         this.selectedPrefecture = null;
@@ -73,6 +116,8 @@ class StationApp {
         this.setupEventListeners();
         await this.loadPrefectures();
         await this.fetchLines();
+        // プロフィールの優先機能を自動的に適用
+        await this.applyPreferredFeatures();
         await this.loadStations();
     }
     renderFilterControls() {
@@ -214,6 +259,58 @@ class StationApp {
         });
         return filters;
     }
+    /**
+     * プロフィールの優先機能を読み込んで自動的に適用
+     */
+    async applyPreferredFeatures() {
+        // ログイン状態を確認
+        const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+        const userId = localStorage.getItem('userId');
+        if (!isLoggedIn || !userId) {
+            // ログインしていない場合は何もしない
+            return;
+        }
+        try {
+            // プロフィールデータを取得
+            const response = await fetch(`${this.apiBaseUrl}/auth/profile?user_id=${userId}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            const data = await response.json();
+            if (data.success && data.data && data.data.preferred_features && data.data.preferred_features.length > 0) {
+                // 優先機能をメトリックキーに変換
+                const metricKeys = [];
+                data.data.preferred_features.forEach((feature) => {
+                    const mapping = PREFERRED_FEATURE_TO_METRIC_KEY[feature];
+                    if (mapping && mapping[this.currentMode]) {
+                        metricKeys.push(...mapping[this.currentMode]);
+                    }
+                });
+                // 重複を除去
+                const uniqueMetricKeys = [...new Set(metricKeys)];
+                // 現在のモードで利用可能なメトリックのみをフィルタリング
+                const availableMetricKeys = uniqueMetricKeys.filter(key => this.currentMetrics.some(metric => metric.key === key));
+                if (availableMetricKeys.length > 0) {
+                    // チェックボックスを自動的にチェック
+                    availableMetricKeys.forEach(metricKey => {
+                        const checkbox = document.querySelector(`input.filter-checkbox[data-metric-key="${metricKey}"]`);
+                        if (checkbox) {
+                            checkbox.checked = true;
+                        }
+                    });
+                    // 絞り込み条件として適用
+                    this.selectedFilters = availableMetricKeys;
+                    // アクティブフィルターを表示
+                    this.updateActiveFilters();
+                }
+            }
+        }
+        catch (error) {
+            console.error('Failed to load preferred features:', error);
+            // エラーが発生しても処理を続行
+        }
+    }
     async loadPrefectures() {
         const response = await this.fetchApi('/stations/prefectures');
         if (response.success && response.data) {
@@ -246,7 +343,11 @@ class StationApp {
             loadingIndicator.style.display = 'block';
         if (stationsContainer)
             stationsContainer.innerHTML = '';
-        this.selectedFilters = this.collectFilters();
+        // チェックボックスからフィルターを収集（既に設定されているフィルターとマージ）
+        const collectedFilters = this.collectFilters();
+        // 既存のフィルターとマージ（重複を除去）
+        const allFilters = [...new Set([...this.selectedFilters, ...collectedFilters])];
+        this.selectedFilters = allFilters;
         const params = new URLSearchParams({
             limit: this.pageSize.toString(),
             offset: ((this.currentPage - 1) * this.pageSize).toString(),
@@ -451,7 +552,7 @@ class StationApp {
             lastButton.disabled = isLastPage; // ★追加
     }
     navigateToDetail(stationId) {
-        const url = new URL('detail.html', window.location.href);
+        const url = new URL('/detail', window.location.origin);
         url.searchParams.set('stationId', stationId.toString());
         url.searchParams.set('mode', this.currentMode);
         window.location.href = url.toString();
@@ -468,7 +569,7 @@ class StationApp {
         if (!lineSelect)
             return;
         try {
-            const res = await fetch('http://localhost:5000/api/lines');
+            const res = await fetch('/api/lines');
             const json = await res.json();
             if (json.success) {
                 lineSelect.innerHTML = '<option value="">指定なし</option>';

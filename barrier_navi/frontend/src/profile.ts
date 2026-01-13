@@ -344,7 +344,7 @@ class ProfilePage {
       this.renderFavoriteStations();
     }
 
-    // 優先したい機能
+    // 優先したい設備
     if (data.preferred_features && Array.isArray(data.preferred_features)) {
       data.preferred_features.forEach(feature => {
         const checkbox = document.querySelector(`input[name="preferred_features"][value="${feature}"]`) as HTMLInputElement;

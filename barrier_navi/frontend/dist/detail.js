@@ -1,7 +1,7 @@
 "use strict";
 class DetailPage {
     constructor() {
-        this.apiBaseUrl = 'http://localhost:5000/api';
+        this.apiBaseUrl = '/api';
         this.titleEl = null;
         this.scoreEl = null;
         this.metaEl = null;
@@ -32,13 +32,13 @@ class DetailPage {
         const backBtn = document.getElementById('back_btn');
         if (backBtn) {
             if (this.currentMode === 'hearing') {
-                backBtn.href = 'hearing.html';
+                backBtn.href = '/hearing';
             }
             else if (this.currentMode === 'vision') {
-                backBtn.href = 'vision.html';
+                backBtn.href = '/vision';
             }
             else {
-                backBtn.href = 'index.html';
+                backBtn.href = '/index';
             }
         }
     }
