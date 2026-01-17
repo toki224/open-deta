@@ -32,3 +32,6 @@ Thumbs.db
 
 #node modules
 node_modules/
+
+# テストファイル
+docs/test.md
