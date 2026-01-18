@@ -301,12 +301,42 @@ npm run watch
 - パスワードはbcryptでハッシュ化して保存されます
 - ゲストモードでは個人設定の保存はできません
 
+## AWSデプロイ
+
+バリアナビをAWSにデプロイする方法については、以下のドキュメントを参照してください：
+
+- **[AWS_DEPLOYMENT.md](AWS/AWS_DEPLOYMENT.md)** - ECS + ECR + RDSを使用した本番環境向けデプロイガイド（Linux/Mac向け）
+- **[AWS_DEPLOYMENT_SIMPLE.md](AWS/AWS_DEPLOYMENT_SIMPLE.md)** - EC2 + Docker Composeを使用した簡易デプロイガイド
+- **[AWS_DEPLOYMENT_WINDOWS.md](AWS/AWS_DEPLOYMENT_WINDOWS.md)** - Windows環境からのデプロイガイド
+
+### クイックスタート
+
+**Linux/Macの場合:**
+```bash
+# デプロイスクリプトを実行（ECRへのイメージプッシュまで）
+./scripts/aws-deploy.sh
+
+# 環境変数を設定
+source scripts/aws-config.env.example  # 実際の値に変更してください
+```
+
+**Windowsの場合:**
+```powershell
+# PowerShellで実行
+# 詳細は AWS_DEPLOYMENT_WINDOWS.md を参照してください
+```
+
+詳細な手順は上記のドキュメントを参照してください。
+
 ## ドキュメント
 
 - `WEBアプリケーション概要.txt` - アプリケーション全体の概要
 - `スコア計算ロジック説明.txt` - スコア計算の詳細な仕組み
 - `プログラム概要.txt` - 初心者向けプログラム説明
 - `docs/barianavi_spec.md` - バリアナビの詳細仕様書
+- `docs/AWS/AWS_DEPLOYMENT.md` - AWSデプロイガイド（本番環境向け）
+- `docs/AWS/AWS_DEPLOYMENT_SIMPLE.md` - AWSデプロイガイド（簡易版）
+- `docs/AWS/AWS_DEPLOYMENT_WINDOWS.md` - AWSデプロイガイド（Windows版）
 
 ## ライセンス
 
