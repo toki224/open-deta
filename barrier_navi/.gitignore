@@ -35,3 +35,10 @@ node_modules/
 
 # テストファイル
 docs/test.md
+
+docs/AWS/AWS_DEPLOYMENT_SIMPLE.md
+docs/AWS/AWS_DEPLOYMENT_WINDOWS.md
+docs/AWS/AWS_DEPLOYMENT.md
+docs/AWS/RDS_SUBNET_GROUP_FIX.md
+docs/AWS/VPC_CIDR_GUIDE.md
+docs/AWS/architecture.png
